@@ -11,4 +11,4 @@ using BufferIterT = BufferT::iterator;
 
 static constexpr size_t MAX_MSG_SIZE_BYTES = (1 << 16) - 1;
 
-} // namespace CircularBuffer
+}  // namespace CircularBuffer

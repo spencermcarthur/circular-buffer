@@ -1,1 +1,3 @@
-BasedOn: Google
+BasedOnStyle: Google
+IndentWidth: 4
+AccessModifierOffset: -4

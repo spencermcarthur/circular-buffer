@@ -9,13 +9,13 @@ namespace CircularBuffer {
 
 class Writer : public IWrapper {
 public:
-  Writer(const Spec &spec);
+    Writer(const Spec &spec);
 
-  // No default/copy/move construction
-  EXPLICIT_DELETE_CONSTRUCTORS(Writer);
+    // No default/copy/move construction
+    EXPLICIT_DELETE_CONSTRUCTORS(Writer);
 
-  // Writes data to buffer in shared memory
-  void Write(BufferT writeBuffer);
+    // Writes data to buffer in shared memory
+    void Write(BufferT writeBuffer);
 };
 
-} // namespace CircularBuffer
+}  // namespace CircularBuffer

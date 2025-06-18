@@ -1,11 +1,11 @@
 #pragma once
 
-#define EXPLICIT_DELETE_CONSTRUCTORS(CLS)                                       \
-  CLS() = delete;                                                              \
-  CLS(const CLS &) = delete;                                                   \
-  CLS &operator=(const CLS &) = delete;                                        \
-  CLS(CLS &&) = delete;                                                        \
-  CLS &operator=(CLS &&) = delete
+#define EXPLICIT_DELETE_CONSTRUCTORS(CLS) \
+    CLS() = delete;                       \
+    CLS(const CLS &) = delete;            \
+    CLS &operator=(const CLS &) = delete; \
+    CLS(CLS &&) = delete;                 \
+    CLS &operator=(CLS &&) = delete
 
 #ifndef CACHELINE_SIZE_BYTES
 #define CACHELINE_SIZE_BYTES 64
