@@ -22,7 +22,7 @@ public:
   ~SharedMemory();
 
   // No default/copy/move construction
-  DELETE_DEFAULT_CONSTRUCTORS(SharedMemory);
+  EXPLICIT_DELETE_CONSTRUCTORS(SharedMemory);
 
   // For accessing shared memory as a shared data structure by reinterpretation
   template <typename T> T *AsStruct() const {

@@ -14,7 +14,7 @@ public:
   virtual ~IWrapper();
 
   // No default/copy/move construction
-  DELETE_DEFAULT_CONSTRUCTORS(IWrapper);
+  EXPLICIT_DELETE_CONSTRUCTORS(IWrapper);
 
 protected:
   Iterators *m_Iters{nullptr};

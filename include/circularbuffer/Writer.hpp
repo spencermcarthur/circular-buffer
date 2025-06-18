@@ -12,7 +12,7 @@ public:
   Writer(const Spec &spec);
 
   // No default/copy/move construction
-  DELETE_DEFAULT_CONSTRUCTORS(Writer);
+  EXPLICIT_DELETE_CONSTRUCTORS(Writer);
 
   // Writes data to buffer in shared memory
   void Write(BufferT writeBuffer);

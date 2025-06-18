@@ -1,6 +1,6 @@
 #pragma once
 
-#define DELETE_DEFAULT_CONSTRUCTORS(CLS)                                       \
+#define EXPLICIT_DELETE_CONSTRUCTORS(CLS)                                       \
   CLS() = delete;                                                              \
   CLS(const CLS &) = delete;                                                   \
   CLS &operator=(const CLS &) = delete;                                        \

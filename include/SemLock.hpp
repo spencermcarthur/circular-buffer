@@ -66,7 +66,7 @@ public:
     delete[] m_Name;
   }
 
-  DELETE_DEFAULT_CONSTRUCTORS(SemLock);
+  EXPLICIT_DELETE_CONSTRUCTORS(SemLock);
 
   bool Acquire() { return sem_trywait(m_Sem) == -1 ? false : true; }
   bool Release() { return sem_post(m_Sem) == -1 ? false : true; }

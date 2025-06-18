@@ -12,7 +12,7 @@ public:
   Reader(const Spec &spec);
 
   // No default/copy/move construction
-  DELETE_DEFAULT_CONSTRUCTORS(Reader);
+  EXPLICIT_DELETE_CONSTRUCTORS(Reader);
 
   // Returns number of bytes read, 0 if nothing to read
   int Read(BufferT readBuffer);
