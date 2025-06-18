@@ -1,7 +1,5 @@
 #pragma once
 
-#include <linux/limits.h>
-
 #include <cstddef>
 #include <string>
 
