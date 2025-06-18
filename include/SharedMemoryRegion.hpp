@@ -72,15 +72,15 @@ private:
   // pointers
   void UnmapSharedMem() noexcept;
 
-  // Name of shared memory region - used for linking/unlinking
-  char *m_Name{nullptr};
+  // Name of shared memory region - used for shm_* syscalls
+  std::string m_Name{nullptr};
   // Reference counter to control shared memory lifetime
   int *m_RefCounter{nullptr};
   // Actual underlying data - the stuff we care about
   void *m_Data{nullptr};
-  // Size in bytes of shared data region
+  // Size in bytes of shared memory data portion
   const size_t m_DataSize;
-  // Size in bytes of shared data region plus reference counter
+  // Size in bytes of shared memory data + ref counter
   const size_t m_TotalSize;
   // For storing the FD that describes our shared memory
   int m_FileDes{-1};
