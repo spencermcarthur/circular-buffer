@@ -16,16 +16,22 @@
 
 SharedMemoryRegion::SharedMemoryRegion(std::string_view name,
                                        size_t requestedSize)
-    : m_Name(name.data(), name.size()), m_DataSize(requestedSize),
+    : m_DataSize(requestedSize),
       m_TotalSize(requestedSize + DATA_OFFSET_BYTES) {
+  const size_t nameLen = name.length();
+
   // Validate args
-  if (name.length() < 1 || name.length() > NAME_MAX) {
+  if (nameLen < 1 || nameLen > NAME_MAX) {
     throw std::length_error(
         "Length of memoryRegionName must satisfy 0 < len <= 255");
   } else if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE_BYTES) {
     throw std::domain_error(
         "requestedSize must be between 1B and 500MiB (inclusive)");
   }
+
+  // Copy name
+  m_Name = new char[nameLen + 1]{};
+  std::strncpy(m_Name, name.data(), nameLen);
 
   // If we can't open shared memory at m_Name
   if (!OpenSharedMem()) {
@@ -64,6 +70,8 @@ SharedMemoryRegion::~SharedMemoryRegion() {
 
     CloseSharedMem();
   }
+
+  delete[] m_Name;
 }
 
 int SharedMemoryRegion::ReferenceCount() const {
@@ -77,7 +85,7 @@ int SharedMemoryRegion::ReferenceCount() const {
 
 bool SharedMemoryRegion::OpenSharedMem() {
   // Try to open shared memory file
-  int fd = shm_open(m_Name.c_str(), O_RDWR, S_IRUSR + S_IWUSR);
+  int fd = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
   if (fd == -1) {
     // Failed
     return false;
@@ -120,8 +128,7 @@ void SharedMemoryRegion::CloseSharedMem() noexcept {
 
 void SharedMemoryRegion::LinkSharedMem() {
   // Create new shared memory in system
-  int fd =
-      shm_open(m_Name.c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
+  int fd = shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
   if (fd == -1) {
     // Failed
     const int err = errno;
@@ -141,7 +148,7 @@ void SharedMemoryRegion::LinkSharedMem() {
 }
 
 void SharedMemoryRegion::UnlinkSharedMem() noexcept {
-  if (shm_unlink(m_Name.c_str()) == -1) {
+  if (shm_unlink(m_Name) == -1) {
     // Failed
     const int err = errno;
     std::cerr << std::format("({}:{}) Failed to unlink {}: {}", __FILE__,
