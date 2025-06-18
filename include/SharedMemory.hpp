@@ -9,7 +9,7 @@
 #include <string_view>
 
 // Class for managing Linux shared memory
-class SharedMemoryRegion {
+class SharedMemory {
   // Needed for putting the ref counter on its own cacheline
   static constexpr size_t DATA_OFFSET_BYTES = CACHELINE_SIZE_BYTES;
 
@@ -17,11 +17,11 @@ public:
   // Arbitrary 500 MiB
   static constexpr size_t MAX_SHARED_MEM_SIZE_BYTES = 500 * 1024 * 1024;
 
-  SharedMemoryRegion(std::string_view memoryRegionName, size_t requestedSize);
-  ~SharedMemoryRegion();
+  SharedMemory(std::string_view shMemName, size_t requestedSize);
+  ~SharedMemory();
 
   // No default/copy/move construction
-  DELETE_DEFAULT_CONSTRUCTORS(SharedMemoryRegion);
+  DELETE_DEFAULT_CONSTRUCTORS(SharedMemory);
 
   // For accessing shared memory as a shared data structure by reinterpretation
   template <typename T> T *AsStruct() const {
@@ -74,9 +74,11 @@ private:
 
   // Name of shared memory region - used for linking/unlinking
   char *m_Name{nullptr};
-  // Reference counter to control shared memory lifetime
+  // Reference counter to control shared memory lifetime. Set by `MapSharedMem`,
+  // reset by `UnmapSharedMem`.
   int *m_RefCounter{nullptr};
-  // Actual underlying data - the stuff we care about
+  // Actual underlying data - the stuff we care about. Set by `MapSharedMem`,
+  // reset by `UnmapSharedMem`.
   void *m_Data{nullptr};
   // Size in bytes of shared data region
   const size_t m_DataSize;

@@ -1,4 +1,4 @@
-#include "SharedMemoryRegion.hpp"
+#include "SharedMemory.hpp"
 
 #include <atomic>
 #include <cerrno>
@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-SharedMemoryRegion::SharedMemoryRegion(std::string_view name,
+SharedMemory::SharedMemory(std::string_view name,
                                        size_t requestedSize)
     : m_DataSize(requestedSize),
       m_TotalSize(requestedSize + DATA_OFFSET_BYTES) {
@@ -55,7 +55,7 @@ SharedMemoryRegion::SharedMemoryRegion(std::string_view name,
   std::atomic_ref<int>(*m_RefCounter).fetch_add(1, std::memory_order_release);
 }
 
-SharedMemoryRegion::~SharedMemoryRegion() {
+SharedMemory::~SharedMemory() {
   // Check before dereferencing
   if (m_RefCounter != nullptr) {
     // Decrement ref counter, and capture value before CAS operation
@@ -74,7 +74,7 @@ SharedMemoryRegion::~SharedMemoryRegion() {
   delete[] m_Name;
 }
 
-int SharedMemoryRegion::ReferenceCount() const {
+int SharedMemory::ReferenceCount() const {
   int refCount{-1};
   if (m_RefCounter) {
     refCount =
@@ -83,7 +83,7 @@ int SharedMemoryRegion::ReferenceCount() const {
   return refCount;
 }
 
-bool SharedMemoryRegion::OpenSharedMem() {
+bool SharedMemory::OpenSharedMem() {
   // Try to open shared memory file
   int fd = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
   if (fd == -1) {
@@ -114,7 +114,7 @@ bool SharedMemoryRegion::OpenSharedMem() {
   return true;
 }
 
-void SharedMemoryRegion::CloseSharedMem() noexcept {
+void SharedMemory::CloseSharedMem() noexcept {
   if (close(m_FileDes) == -1) {
     // Failed
     const int err = errno;
@@ -126,7 +126,7 @@ void SharedMemoryRegion::CloseSharedMem() noexcept {
   m_FileDes = -1;
 }
 
-void SharedMemoryRegion::LinkSharedMem() {
+void SharedMemory::LinkSharedMem() {
   // Create new shared memory in system
   int fd = shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
   if (fd == -1) {
@@ -147,7 +147,7 @@ void SharedMemoryRegion::LinkSharedMem() {
   }
 }
 
-void SharedMemoryRegion::UnlinkSharedMem() noexcept {
+void SharedMemory::UnlinkSharedMem() noexcept {
   if (shm_unlink(m_Name) == -1) {
     // Failed
     const int err = errno;
@@ -157,7 +157,7 @@ void SharedMemoryRegion::UnlinkSharedMem() noexcept {
   }
 }
 
-void SharedMemoryRegion::MapSharedMem() {
+void SharedMemory::MapSharedMem() {
   // Map shared memory to our process's virtual memory
   void *data =
       mmap(NULL, m_TotalSize, PROT_READ | PROT_WRITE, MAP_SHARED, m_FileDes, 0);
@@ -172,7 +172,7 @@ void SharedMemoryRegion::MapSharedMem() {
   m_Data = reinterpret_cast<void *>(m_RefCounter + DATA_OFFSET_BYTES);
 }
 
-void SharedMemoryRegion::UnmapSharedMem() noexcept {
+void SharedMemory::UnmapSharedMem() noexcept {
   if (munmap(reinterpret_cast<void *>(m_RefCounter), m_TotalSize) == -1) {
     // Failed to unmap
     const int err = errno;

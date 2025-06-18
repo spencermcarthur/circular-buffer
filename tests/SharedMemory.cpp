@@ -1,4 +1,4 @@
-#include "SharedMemoryRegion.hpp"
+#include "SharedMemory.hpp"
 #include "Utils.hpp"
 
 #include <gtest/gtest.h>
@@ -7,7 +7,7 @@
 const char *g_Name = "/testing";
 const size_t g_Size = 1024 * 1024; // 1 MiB
 
-TEST(SharedMemoryRegion, Construct) {
+TEST(SharedMemory, Construct) {
   // Unlink shared memory if it already exists
   if (CheckSharedMemExists(g_Name))
     UnlinkSharedMem(g_Name);
@@ -17,7 +17,7 @@ TEST(SharedMemoryRegion, Construct) {
 
   // Create shared memory and verify that everything was initialized as expected
   {
-    SharedMemoryRegion shmem(g_Name, g_Size);
+    SharedMemory shmem(g_Name, g_Size);
 
     EXPECT_STREQ(g_Name, shmem.Name().c_str());
     EXPECT_EQ(g_Size, shmem.Size());
@@ -31,14 +31,14 @@ TEST(SharedMemoryRegion, Construct) {
   EXPECT_FALSE(CheckSharedMemExists(g_Name));
 }
 
-TEST(SharedMemoryRegion, ConstructFailCases) {
+TEST(SharedMemory, ConstructFailCases) {
   // Name length
-  EXPECT_THROW(SharedMemoryRegion("", 0), std::length_error);
+  EXPECT_THROW(SharedMemory("", 0), std::length_error);
   // Requested size
-  EXPECT_THROW(SharedMemoryRegion(g_Name, 0), std::domain_error);
+  EXPECT_THROW(SharedMemory(g_Name, 0), std::domain_error);
 }
 
-TEST(SharedMemoryRegion, ConstructMultiple) {
+TEST(SharedMemory, ConstructMultiple) {
   // Unlink shared memory if it already exists
   if (CheckSharedMemExists(g_Name))
     UnlinkSharedMem(g_Name);
@@ -49,15 +49,15 @@ TEST(SharedMemoryRegion, ConstructMultiple) {
   // Construct multiple shared memory regions and verify that reference counter
   // is increasing and decreasing as expected
   {
-    SharedMemoryRegion shmem1(g_Name, g_Size);
+    SharedMemory shmem1(g_Name, g_Size);
     EXPECT_EQ(shmem1.ReferenceCount(), 1);
 
     {
-      SharedMemoryRegion shmem2(g_Name, g_Size);
+      SharedMemory shmem2(g_Name, g_Size);
       EXPECT_EQ(shmem1.ReferenceCount(), 2);
 
       {
-        SharedMemoryRegion shmem3(g_Name, g_Size);
+        SharedMemory shmem3(g_Name, g_Size);
 
         EXPECT_EQ(shmem1.ReferenceCount(), 3);
       }

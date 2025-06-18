@@ -1,12 +1,13 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
+#include <span>
 
 namespace CircularBuffer {
 
-using IndexType = int64_t;
-using DataType = std::byte;
+using DataT = std::byte;
+using BufferT = std::span<DataT>;
+using BufferIterT = BufferT::iterator;
 
 static constexpr size_t MAX_MSG_SIZE_BYTES = (1 << 16) - 1;
 

@@ -19,7 +19,7 @@ The implementation must include tests using Google Test (GTest).
 
 ## Components
 
-### `SharedMemoryRegion`
+### `SharedMemory`
 RAII class for managing access to and lifetime of shared memory. Maintains an atomic reference count stored at beginning of shared memory location.
 
 At construction, requests access to named shared memory via `shm_open`. If requested shared memory doesn't exists, handles creation via that same syscall. Once access is acquired, maps shared memory to the calling process's virtual memory via `mmap`.
@@ -29,13 +29,13 @@ At destruction, unmaps shared memory from calling process's virtual memory via `
 Allows reinterpretation of the shared memory as a struct or a contiguous `span` of data via template methods.
 
 ### `CircularBuffer::IWrapper`
-Interface class that owns `SharedMemoryRegion` objects and facilitates the simple implementation of `Reader` and `Writer` instances.
+Interface class that owns `SharedMemory` objects and wraps around the buffer indices and data. Facilitates the simple implementation of `Reader` and `Writer` instances.
 
 ### `CircularBuffer::Reader`
-Inherits from `IWrapper` and handles asynchronous reads from the buffer. Implements method `int Read(span<byte>)`.
+`IWrapper` implementation that handles asynchronous reads from the buffer. Implements method `int Read(span<byte>)`.
 
 ### `CircularBuffer::Writer`
-Inherits from `IWrapper` and handles asynchronous writes to the buffer. Implements method `void Write(span<byte>)`.
+`IWrapper` implementation that handles asynchronous writes to the buffer. Implements method `void Write(span<byte>)`.
 
 ## Testing
 

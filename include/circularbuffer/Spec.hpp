@@ -7,10 +7,10 @@
 namespace CircularBuffer {
 
 struct Spec {
-  // Name for shared memory region storing buffer indices
+  // Name of shared memory region for storing buffer indices
   std::string indexSharedMemoryName;
-  // Name for shared memory region storing buffer data
-  std::string dataSharedMemoryName;
+  // Name of shared memory region for storing buffer data
+  std::string bufferSharedMemoryName;
   // Requested capacity in bytes
   size_t bufferCapacity{0};
 };

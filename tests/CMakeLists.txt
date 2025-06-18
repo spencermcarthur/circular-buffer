@@ -9,13 +9,13 @@ add_library(Testing SHARED EXCLUDE_FROM_ALL
 link_libraries(CircularBuffer Testing GTest::gtest GTest::gtest_main)
 
 ############################## TESTS ##############################
-# SharedMemoryRegion
-add_executable(SharedMemoryRegion EXCLUDE_FROM_ALL SharedMemoryRegion.cpp)
-add_test(NAME SharedMemoryRegion COMMAND SharedMemoryRegion)
+# SharedMemory
+add_executable(SharedMemory EXCLUDE_FROM_ALL SharedMemory.cpp)
+add_test(NAME SharedMemory COMMAND SharedMemory)
 
 
 ###################################################################
 
 # Target for building all tests
 add_custom_target(tests
-    DEPENDS SharedMemoryRegion)
+    DEPENDS SharedMemory)

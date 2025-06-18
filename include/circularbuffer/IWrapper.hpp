@@ -3,10 +3,8 @@
 #include "Aliases.hpp"
 #include "Defines.hpp"
 #include "Indices.hpp"
-#include "SharedMemoryRegion.hpp"
+#include "SharedMemory.hpp"
 #include "Spec.hpp"
-
-#include <span>
 
 namespace CircularBuffer {
 
@@ -19,15 +17,15 @@ public:
   DELETE_DEFAULT_CONSTRUCTORS(IWrapper);
 
 protected:
-  Indices *m_Indices{nullptr};
-  std::span<DataType> m_Data{};
+  Iterators *m_Iters{nullptr};
+  BufferT m_Buffer;
 
-  IndexType m_LocalIdx{0};
-  DataType *m_NextElement{nullptr};
+  BufferIterT m_LocalIter;
+  BufferIterT m_NextElement;
 
 private:
-  SharedMemoryRegion *m_IndexRegion{nullptr};
-  SharedMemoryRegion *m_DataRegion{nullptr};
+  SharedMemory *m_IndexRegion{nullptr};
+  SharedMemory *m_BufferRegion{nullptr};
 };
 
 } // namespace CircularBuffer

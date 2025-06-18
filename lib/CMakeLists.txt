@@ -1,6 +1,6 @@
 # Main CircularBuffer library
 add_library(CircularBuffer SHARED
-    ${CMAKE_SOURCE_DIR}/src/SharedMemoryRegion.cpp
+    ${CMAKE_SOURCE_DIR}/src/SharedMemory.cpp
     ${CMAKE_SOURCE_DIR}/src/circularbuffer/IWrapper.cpp
     ${CMAKE_SOURCE_DIR}/src/circularbuffer/Writer.cpp
     ${CMAKE_SOURCE_DIR}/src/circularbuffer/Reader.cpp
