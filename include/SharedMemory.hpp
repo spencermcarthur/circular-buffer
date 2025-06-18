@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "Defines.hpp"
-#include "SemLock.hpp"
+#include "SemaphoreLock.hpp"
 
 // Class for managing Linux shared memory
 class SharedMemory {
@@ -96,5 +96,5 @@ private:
     // For storing the FD that describes our shared memory
     int m_FileDes{-1};
     // Semaphore lock for synchronizing linking/unlinking of shared memory
-    SemLock m_SemLock;
+    SemaphoreLock m_SemaphoreLock;
 };

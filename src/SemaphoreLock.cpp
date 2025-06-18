@@ -1,4 +1,4 @@
-#include "SemLock.hpp"
+#include "SemaphoreLock.hpp"
 
 #include <fcntl.h>
 #include <semaphore.h>
@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <string_view>
 
-SemLock::SemLock(std::string_view name) {
+SemaphoreLock::SemaphoreLock(std::string_view name) {
     // Validate name
     if (name.empty() || name.length() > MAX_SEM_NAME_LEN) {
         throw std::length_error(std::format(
@@ -45,7 +45,7 @@ SemLock::SemLock(std::string_view name) {
     m_Sem = sem;
 }
 
-SemLock::~SemLock() {
+SemaphoreLock::~SemaphoreLock() {
     if (m_HoldsOwnership.load(std::memory_order_acquire)) {
         int err;
         if (!Release(err)) {
@@ -66,7 +66,7 @@ SemLock::~SemLock() {
     delete[] m_Name;
 }
 
-bool SemLock::Acquire() noexcept {
+bool SemaphoreLock::Acquire() noexcept {
     const bool acquired = sem_trywait(m_Sem) == 0;
     if (acquired) {
         m_HoldsOwnership.store(true, std::memory_order_release);
@@ -75,7 +75,7 @@ bool SemLock::Acquire() noexcept {
     return acquired;
 }
 
-bool SemLock::Release() noexcept {
+bool SemaphoreLock::Release() noexcept {
     const bool released = sem_post(m_Sem) == 0;
     if (released) {
         m_HoldsOwnership.store(false, std::memory_order_release);
@@ -84,7 +84,7 @@ bool SemLock::Release() noexcept {
     return released;
 }
 
-bool SemLock::Acquire(int &err) noexcept {
+bool SemaphoreLock::Acquire(int &err) noexcept {
     const bool acquired = sem_trywait(m_Sem) == 0;
     if (acquired) {
         m_HoldsOwnership.store(true, std::memory_order_release);
@@ -95,7 +95,7 @@ bool SemLock::Acquire(int &err) noexcept {
     return acquired;
 }
 
-bool SemLock::Release(int &err) noexcept {
+bool SemaphoreLock::Release(int &err) noexcept {
     const bool released = sem_post(m_Sem) == 0;
     if (released) {
         m_HoldsOwnership.store(false, std::memory_order_release);

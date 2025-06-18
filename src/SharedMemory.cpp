@@ -14,12 +14,12 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "SemLock.hpp"
+#include "SemaphoreLock.hpp"
 
 SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
     : m_DataSize(requestedSize),
       m_TotalSize(requestedSize + DATA_OFFSET_BYTES),
-      m_SemLock(name) {
+      m_SemaphoreLock(name) {
     const size_t nameLen = name.length();
 
     // Validate args
@@ -137,7 +137,7 @@ void SharedMemory::CloseSharedMem() noexcept {
 
 void SharedMemory::LinkSharedMem() {
     // Try to lock semaphore
-    if (!m_SemLock.Acquire()) {
+    if (!m_SemaphoreLock.Acquire()) {
         return;
     }
 
@@ -161,12 +161,12 @@ void SharedMemory::LinkSharedMem() {
             __FILE__, __LINE__, m_Name, strerror(err)));
     }
 
-    m_SemLock.Release();
+    m_SemaphoreLock.Release();
 }
 
 void SharedMemory::UnlinkSharedMem() noexcept {
     // Try to lock semaphore before unlinking
-    if (!m_SemLock.Acquire()) {
+    if (!m_SemaphoreLock.Acquire()) {
         return;
     }
 
@@ -177,7 +177,7 @@ void SharedMemory::UnlinkSharedMem() noexcept {
                                  __LINE__, m_Name, strerror(err));
     }
 
-    m_SemLock.Release();
+    m_SemaphoreLock.Release();
 }
 
 void SharedMemory::MapSharedMem() {
