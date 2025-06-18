@@ -7,6 +7,6 @@
   CLS(CLS &&) = delete;                                                        \
   CLS &operator=(CLS &&) = delete
 
-#ifndef CACHE_LINE_SIZE
-#define CACHE_LINE_SIZE 64
+#ifndef CACHELINE_SIZE_BYTES
+#define CACHELINE_SIZE_BYTES 64
 #endif

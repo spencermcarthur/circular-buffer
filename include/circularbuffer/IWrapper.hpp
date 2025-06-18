@@ -19,11 +19,15 @@ public:
   DELETE_DEFAULT_CONSTRUCTORS(IWrapper);
 
 protected:
+  Indices *m_Indices{nullptr};
+  std::span<DataType> m_Data{};
+
+  IndexType m_LocalIdx{0};
+  DataType *m_NextElement{nullptr};
+
+private:
   SharedMemoryRegion *m_IndexRegion{nullptr};
   SharedMemoryRegion *m_DataRegion{nullptr};
-
-  Indices *m_BufferIndices{nullptr};
-  std::span<DataType> m_BufferData;
 };
 
 } // namespace CircularBuffer
