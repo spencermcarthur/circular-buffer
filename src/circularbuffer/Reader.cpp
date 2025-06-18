@@ -16,21 +16,28 @@ int Reader::Read(BufferT readBuffer) {
         return 0;
     }
 
-    // Get next message size
-    int size;
-    std::memcpy(&size, m_NextElement.base(), sizeof(int));
+    // Check if we're at or past the end of the range
+    if (m_LocalIter >= m_Buffer.end()) [[unlikely]] {
+        m_LocalIter = m_Buffer.begin();
+    }
 
-#pragma GCC warning "TODO: check for overwrite"
+    // Get next message size
+    MessageSizeT msgSize;
+    std::memcpy(&msgSize, m_LocalIter.base(), sizeof(MessageSizeT));
+    m_LocalIter += sizeof(MessageSizeT);
+
+    // TODO: Check for wraparound
+
+    // TODO: Check for overwrite
+    // if(overwritten) return -1;
 
     // Copy next message into readBuffer
-    std::memcpy(readBuffer.data(), m_NextElement.base() + sizeof(int), size);
+    std::memcpy(readBuffer.data(), m_LocalIter.base() + sizeof(int), msgSize);
 
     // Advance index and data pointer
-    const int totalBytesRead = sizeof(int) + size;
-    m_LocalIter += totalBytesRead;
-    m_NextElement += totalBytesRead;
+    m_LocalIter += msgSize;
 
-    return size;
+    return msgSize;
 }
 
 }  // namespace CircularBuffer

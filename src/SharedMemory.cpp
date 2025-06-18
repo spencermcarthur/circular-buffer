@@ -25,10 +25,11 @@ SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
     const size_t nameLen = name.length();
 
     // Validate args
-    if (nameLen < 1 || nameLen > NAME_MAX) {
+    if (nameLen < 1 || nameLen > MAX_NAME_LEN) {
         throw std::length_error(
             "Length of memoryRegionName must satisfy 0 < len <= 255");
-    } else if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE_BYTES) {
+    }
+    if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE_BYTES) {
         throw std::domain_error(
             "requestedSize must be between 1B and 500MiB (inclusive)");
     }
@@ -86,7 +87,7 @@ SharedMemory::~SharedMemory() {
 
 int SharedMemory::ReferenceCount() const {
     int refCount{-1};
-    if (m_RefCounter) {
+    if (m_RefCounter != nullptr) {
         refCount =
             std::atomic_ref<int>(*m_RefCounter).load(std::memory_order_acquire);
     }
@@ -95,15 +96,15 @@ int SharedMemory::ReferenceCount() const {
 
 bool SharedMemory::OpenSharedMem() {
     // Try to open shared memory file
-    int fd = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
-    if (fd == -1) {
+    int fileDesc = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
+    if (fileDesc == -1) {
         // Failed
         return false;
     }
 
     // Get file info
     struct stat buf;
-    if (fstat(fd, &buf) == -1) {
+    if (fstat(fileDesc, &buf) == -1) {
         // Failed
         const int err = errno;
         throw std::runtime_error(std::format("({}:{}) fstat failed for {}: {}",
@@ -119,7 +120,7 @@ bool SharedMemory::OpenSharedMem() {
             __FILE__, __LINE__, buf.st_size, m_DataSize, m_Name));
     }
 
-    m_FileDes = fd;
+    m_FileDes = fileDesc;
 
     return true;
 }
@@ -138,11 +139,14 @@ void SharedMemory::CloseSharedMem() noexcept {
 
 void SharedMemory::LinkSharedMem() {
     // Try to lock semaphore
-    if (!m_SemLock.Acquire()) return;
+    if (!m_SemLock.Acquire()) {
+        return;
+    }
 
     // Create new shared memory in system
-    int fd = shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
-    if (fd == -1) {
+    int fileDesc =
+        shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
+    if (fileDesc == -1) {
         // Failed
         const int err = errno;
         throw std::runtime_error(std::format(
@@ -151,7 +155,7 @@ void SharedMemory::LinkSharedMem() {
     }
 
     // Allocate m_Size bytes
-    if (ftruncate(fd, m_TotalSize) == -1) {
+    if (ftruncate(fileDesc, m_TotalSize) == -1) {
         // Failed
         const int err = errno;
         throw std::runtime_error(std::format(
@@ -164,7 +168,9 @@ void SharedMemory::LinkSharedMem() {
 
 void SharedMemory::UnlinkSharedMem() noexcept {
     // Try to lock semaphore before unlinking
-    if (!m_SemLock.Acquire()) return;
+    if (!m_SemLock.Acquire()) {
+        return;
+    }
 
     if (shm_unlink(m_Name) == -1) {
         // Failed

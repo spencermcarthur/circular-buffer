@@ -16,6 +16,9 @@ class SharedMemory {
     static constexpr size_t DATA_OFFSET_BYTES = CACHELINE_SIZE_BYTES;
 
 public:
+    // See "DESCRIPTION" at
+    // https://man7.org/linux/man-pages/man3/shm_open.3.html
+    static constexpr size_t MAX_NAME_LEN = NAME_MAX;
     // Arbitrary 500 MiB
     static constexpr size_t MAX_SHARED_MEM_SIZE_BYTES = 500 * 1024 * 1024;
 
@@ -25,14 +28,13 @@ public:
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(SharedMemory);
 
-    // For accessing shared memory as a shared data structure by
-    // reinterpretation
+    // For accessing shared memory as struct by reinterpretation
     template <typename T>
     T *AsStruct() const {
         T *data{nullptr};
 
-        // Make sure that m_Data hasn't been unmapped, and check that it fits
-        // exactly into type T
+        // Make sure that m_Data is mapped, and check that it fits exactly into
+        // type T
         if (m_Data && sizeof(T) == m_DataSize) {
             data = reinterpret_cast<T *>(m_Data);
         }
@@ -40,13 +42,13 @@ public:
         return data;
     }
 
-    // For accessing shared memory as contiguous data, e.g. std::span<std::byte>
+    // For accessing shared memory as std::span of contiguous data
     template <typename T>
     std::span<T> AsSpan() const {
         T *data{nullptr};
         size_t size{0};
 
-        // Make sure that m_Data hasn't been unmapped
+        // Make sure that m_Data is mapped
         if (m_Data) {
             data = reinterpret_cast<T *>(m_Data);
             size = m_DataSize;

@@ -10,3 +10,7 @@
 #ifndef CACHELINE_SIZE_BYTES
 #define CACHELINE_SIZE_BYTES 64
 #endif
+
+#ifndef OPEN_MODE_RDWR
+#define OPEN_MODE_RDWR 0600
+#endif

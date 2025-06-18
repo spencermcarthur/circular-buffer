@@ -10,18 +10,20 @@ namespace CircularBuffer {
 
 class IWrapper {
 public:
-    IWrapper(const Spec &spec);
-    virtual ~IWrapper();
-
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(IWrapper);
 
 protected:
-    Iterators *m_Iters{nullptr};
-    BufferT m_Buffer;
+    IWrapper(const Spec &spec);
+    virtual ~IWrapper();
 
+    // Buffer iterators
+    Iterators *m_Iters{nullptr};
+    // Buffer data
+    BufferT m_Buffer;
+    // Local iterator to avoid atomic ops on buffer iterators as much as
+    // possible. Mostly benefits the writer.
     BufferIterT m_LocalIter;
-    BufferIterT m_NextElement;
 
 private:
     SharedMemory *m_IndexRegion{nullptr};

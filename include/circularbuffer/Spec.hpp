@@ -5,6 +5,7 @@
 
 namespace CircularBuffer {
 
+// POD struct for buffer specification
 struct Spec {
     // Name of shared memory region for storing buffer indices
     std::string indexSharedMemoryName;

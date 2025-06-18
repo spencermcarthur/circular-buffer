@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 #include "Aliases.hpp"
 #include "Defines.hpp"
 #include "IWrapper.hpp"
@@ -16,6 +18,8 @@ public:
 
     // Returns number of bytes read, 0 if nothing to read
     int Read(BufferT readBuffer);
+    // Compatibility interface
+    int Read(DataT *data, size_t size) { return Read({data, size}); }
 };
 
 }  // namespace CircularBuffer

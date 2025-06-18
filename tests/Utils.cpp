@@ -8,11 +8,11 @@
 
 bool CheckSharedMemExists(const char *name) {
     bool exists{true};
-    int fd = shm_open(name, O_RDONLY, 0);
-    if (fd == -1 && errno == ENOENT) {
+    int fileDesc = shm_open(name, O_RDONLY, 0);
+    if (fileDesc == -1 && errno == ENOENT) {
         exists = false;
     }
-    close(fd);
+    close(fileDesc);
     return exists;
 }
 
