@@ -33,7 +33,8 @@ public:
   int ReferenceCount() const;
 
 private:
-  // Open a shared memory location using shm_open
+  // Open a shared memory location using shm_open. Returns false if shared
+  // memory does not exist
   bool OpenSharedMem();
   // Close shared memory file without unlinking
   void CloseSharedMem() noexcept;
@@ -50,7 +51,7 @@ private:
   void UnmapSharedMem() noexcept;
 
   // Name of shared memory region - used for linking/unlinking
-  char m_Name[NAME_MAX + 1]{};
+  char *m_Name{nullptr};
   // Reference counter to control shared memory lifetime
   int *m_RefCounter{nullptr};
   // Actual underlying data - the stuff we care about

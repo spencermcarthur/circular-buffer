@@ -2,11 +2,12 @@
 #include "Utils.hpp"
 
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 const char *g_Name = "/testing";
 const size_t g_Size = 1024 * 1024; // 1 MiB
 
-TEST(SharedMemoryRegion, Constructor) {
+TEST(SharedMemoryRegion, Construct) {
   // Unlink shared memory if it already exists
   if (CheckSharedMemExists(g_Name))
     UnlinkSharedMem(g_Name);
@@ -29,6 +30,13 @@ TEST(SharedMemoryRegion, Constructor) {
 
   // Check that shared memory was unlinked again when shmem was destroyed
   EXPECT_FALSE(CheckSharedMemExists(g_Name));
+}
+
+TEST(SharedMemoryRegion, ConstructFailCases) {
+  // Name length
+  EXPECT_THROW(SharedMemoryRegion("", 0), std::length_error);
+  // Requested size
+  EXPECT_THROW(SharedMemoryRegion(g_Name, 0), std::domain_error);
 }
 
 TEST(SharedMemoryRegion, ConstructMultiple) {

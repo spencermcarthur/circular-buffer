@@ -19,16 +19,19 @@ SharedMemoryRegion::SharedMemoryRegion(const char *name, size_t requestedSize,
                                        bool readOnly)
     : m_DataSize(requestedSize), m_TotalSize(requestedSize + sizeof(int)),
       m_IsReadOnly(readOnly) {
-  // Validate args
   const size_t nameLen = std::strlen(name);
-  if (nameLen > NAME_MAX) {
-    throw std::length_error("Name of memory region must be <= 255");
+
+  // Validate args
+  if (nameLen < 1 || nameLen > NAME_MAX) {
+    throw std::length_error(
+        "Length of memoryRegionName must satisfy 0 < len <= 255");
   } else if (requestedSize < 1 || requestedSize > MAX_SHMMEM_SIZE) {
     throw std::domain_error(
         "requestedSize must be between 1B and 500MiB (inclusive)");
   }
 
   // Copy name
+  m_Name = new char[nameLen + 1]{};
   std::strncpy(m_Name, name, nameLen);
 
   // If we can't open shared memory at m_Name
@@ -36,8 +39,8 @@ SharedMemoryRegion::SharedMemoryRegion(const char *name, size_t requestedSize,
     // Try to create it
     LinkSharedMem();
 
-    // If we succeeded (didn't crash) in creating it but still can't open it,
-    // then fail
+    // If we succeeded in creating it (i.e. didn't crash) but still can't open
+    // it, then fail
     if (!OpenSharedMem()) {
       const int err = errno;
       throw std::runtime_error(
@@ -49,14 +52,14 @@ SharedMemoryRegion::SharedMemoryRegion(const char *name, size_t requestedSize,
   // Map the data to our virtual memory
   MapSharedMem();
 
-  // Update ref counter
+  // Increment ref counter
   std::atomic_ref<int>(*m_RefCounter).fetch_add(1, std::memory_order_release);
 }
 
 SharedMemoryRegion::~SharedMemoryRegion() {
   // Check before dereferencing
   if (m_RefCounter != nullptr) {
-    // Ref count before atomic CAS operation
+    // Decrement ref counter, and capture value before CAS operation
     const int prevRefCount = std::atomic_ref<int>(*m_RefCounter)
                                  .fetch_sub(1, std::memory_order_release);
 
@@ -68,6 +71,8 @@ SharedMemoryRegion::~SharedMemoryRegion() {
 
     CloseSharedMem();
   }
+
+  delete[] m_Name;
 }
 
 template <typename T> T *SharedMemoryRegion::Data() const {
