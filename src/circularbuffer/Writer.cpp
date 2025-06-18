@@ -4,6 +4,8 @@
 #include <cstring>
 
 #include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/IWrapper.hpp"
+#include "circularbuffer/Spec.hpp"
 
 namespace CircularBuffer {
 

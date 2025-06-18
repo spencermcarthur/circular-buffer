@@ -11,7 +11,7 @@ namespace CircularBuffer {
 
 class Writer : public IWrapper {
 public:
-    Writer(const Spec& spec);
+    explicit Writer(const Spec& spec);
 
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(Writer);

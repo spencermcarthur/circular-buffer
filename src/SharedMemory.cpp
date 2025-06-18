@@ -1,8 +1,6 @@
 #include "SharedMemory.hpp"
 
 #include <fcntl.h>
-#include <linux/limits.h>
-#include <semaphore.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -57,14 +55,14 @@ SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
     MapSharedMem();
 
     // Increment ref counter
-    std::atomic_ref<int> refCount(*m_RefCounter);
-    refCount.fetch_add(1, std::memory_order_release);
+    const std::atomic_ref<int> refCounter(*m_RefCounter);
+    refCounter.fetch_add(1, std::memory_order_release);
 }
 
 SharedMemory::~SharedMemory() {
     // Check before dereferencing
     if (m_RefCounter != nullptr) {
-        std::atomic_ref<int> refCounter(*m_RefCounter);
+        const std::atomic_ref<int> refCounter(*m_RefCounter);
 
         // Decrement ref counter, and capture value before CAS operation
         const int refCount =
@@ -96,7 +94,7 @@ int SharedMemory::ReferenceCount() const {
 
 bool SharedMemory::OpenSharedMem() {
     // Try to open shared memory file
-    int fileDesc = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
+    const int fileDesc = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
     if (fileDesc == -1) {
         // Failed
         return false;
@@ -113,7 +111,7 @@ bool SharedMemory::OpenSharedMem() {
     }
 
     // Check that existing shared memory's size is what's expected
-    if ((size_t)buf.st_size != m_TotalSize) {
+    if (static_cast<size_t>(buf.st_size) != m_TotalSize) {
         throw std::runtime_error(std::format(
             "({}:{}) requested shared memory size {} does not match "
             "existing shared memory size {} for name {}",
@@ -144,7 +142,7 @@ void SharedMemory::LinkSharedMem() {
     }
 
     // Create new shared memory in system
-    int fileDesc =
+    const int fileDesc =
         shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
     if (fileDesc == -1) {
         // Failed
@@ -175,9 +173,8 @@ void SharedMemory::UnlinkSharedMem() noexcept {
     if (shm_unlink(m_Name) == -1) {
         // Failed
         const int err = errno;
-        std::cerr << std::format("({}:{}) Failed to unlink {}: {}", __FILE__,
-                                 __LINE__, m_Name, strerror(err))
-                  << std::endl;
+        std::cerr << std::format("({}:{}) Failed to unlink {}: {}\n", __FILE__,
+                                 __LINE__, m_Name, strerror(err));
     }
 
     m_SemLock.Release();
@@ -185,7 +182,7 @@ void SharedMemory::UnlinkSharedMem() noexcept {
 
 void SharedMemory::MapSharedMem() {
     // Map shared memory to our process's virtual memory
-    void *data = mmap(NULL, m_TotalSize, PROT_READ | PROT_WRITE, MAP_SHARED,
+    void *data = mmap(nullptr, m_TotalSize, PROT_READ | PROT_WRITE, MAP_SHARED,
                       m_FileDes, 0);
     if (data == MAP_FAILED) {
         // Failed to map
@@ -202,9 +199,8 @@ void SharedMemory::UnmapSharedMem() noexcept {
     if (munmap(reinterpret_cast<void *>(m_RefCounter), m_TotalSize) == -1) {
         // Failed to unmap
         const int err = errno;
-        std::cerr << std::format("({}:{}) Failed to unmap: {}", __FILE__,
-                                 __LINE__, strerror(err))
-                  << std::endl;
+        std::cerr << std::format("({}:{}) Failed to unmap: {}\n", __FILE__,
+                                 __LINE__, strerror(err));
     }
 
     m_RefCounter = nullptr;

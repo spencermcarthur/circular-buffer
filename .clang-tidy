@@ -1,2 +1,2 @@
-Checks: 'readability-*,modernize-loop-convert,modernize-pass-by-value'
+Checks: 'clang-analyzer-*,readability-*,performance-*,modernize-*,misc-*,google-*,-modernize-use-trailing-return-type,-google-readability-todo,-misc-non-private-member-variables-in-classes'
 HeaderFilterRegex: '.*'

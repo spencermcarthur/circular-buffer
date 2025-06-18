@@ -11,7 +11,7 @@ namespace CircularBuffer {
 
 class Reader : public IWrapper {
 public:
-    Reader(const Spec &spec);
+    explicit Reader(const Spec &spec);
 
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(Reader);

@@ -14,7 +14,7 @@ public:
     EXPLICIT_DELETE_CONSTRUCTORS(IWrapper);
 
 protected:
-    IWrapper(const Spec &spec);
+    explicit IWrapper(const Spec &spec);
     virtual ~IWrapper();
 
     // Buffer iterators

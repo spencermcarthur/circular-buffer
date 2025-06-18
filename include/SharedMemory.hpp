@@ -30,7 +30,7 @@ public:
 
     // For accessing shared memory as struct by reinterpretation
     template <typename T>
-    T *AsStruct() const {
+    [[nodiscard]] T *AsStruct() const {
         T *data{nullptr};
 
         // Make sure that m_Data is mapped, and check that it fits exactly into
@@ -44,7 +44,7 @@ public:
 
     // For accessing shared memory as std::span of contiguous data
     template <typename T>
-    std::span<T> AsSpan() const {
+    [[nodiscard]] std::span<T> AsSpan() const {
         T *data{nullptr};
         size_t size{0};
 
@@ -57,9 +57,9 @@ public:
         return std::span<T>(data, size);
     }
 
-    std::string Name() const { return m_Name; }
-    size_t Size() const { return m_DataSize; }
-    int ReferenceCount() const;
+    [[nodiscard]] std::string Name() const { return m_Name; }
+    [[nodiscard]] size_t Size() const { return m_DataSize; }
+    [[nodiscard]] int ReferenceCount() const;
 
 private:
     // Open a shared memory location using shm_open. Returns false if shared

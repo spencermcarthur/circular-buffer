@@ -1,16 +1,12 @@
 #pragma once
 
-#define EXPLICIT_DELETE_CONSTRUCTORS(CLS) \
-    CLS() = delete;                       \
-    CLS(const CLS &) = delete;            \
-    CLS &operator=(const CLS &) = delete; \
-    CLS(CLS &&) = delete;                 \
-    CLS &operator=(CLS &&) = delete
+#define EXPLICIT_DELETE_CONSTRUCTORS(className)       \
+    className() = delete;                             \
+    className(const className &) = delete;            \
+    className &operator=(const className &) = delete; \
+    className(className &&) = delete;                 \
+    className &operator=(className &&) = delete
 
 #ifndef CACHELINE_SIZE_BYTES
 #define CACHELINE_SIZE_BYTES 64
-#endif
-
-#ifndef OPEN_MODE_RDWR
-#define OPEN_MODE_RDWR 0600
 #endif

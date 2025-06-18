@@ -3,7 +3,10 @@
 #include <format>
 #include <stdexcept>
 
+#include "SharedMemory.hpp"
+#include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/Indices.hpp"
+#include "circularbuffer/Spec.hpp"
 
 namespace CircularBuffer {
 

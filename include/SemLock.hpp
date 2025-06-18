@@ -13,6 +13,8 @@
 
 #include "Defines.hpp"
 
+constexpr int OPEN_MODE_RDWR = 0600;
+
 // Semaphore lock class
 class SemLock {
 public:
@@ -20,7 +22,7 @@ public:
     // https://man7.org/linux/man-pages/man7/sem_overview.7.html
     static constexpr size_t MAX_SEM_NAME_LEN = NAME_MAX - 4;
 
-    SemLock(std::string_view name) {
+    explicit SemLock(std::string_view name) {
         // Validate name
         if (name.empty() || name.length() > MAX_SEM_NAME_LEN) {
             throw std::length_error(std::format(
@@ -59,9 +61,9 @@ public:
         if (ret == -1) {
             // Failed - print error
             const int err = errno;
-            std::cerr << std::format("({}:{}) Failed to close semaphore {}: {}",
-                                     __FILE__, __LINE__, m_Name, strerror(err))
-                      << std::endl;
+            std::cerr << std::format(
+                "({}:{}) Failed to close semaphore {}: {}\n", __FILE__,
+                __LINE__, m_Name, strerror(err));
         }
 
         delete[] m_Name;
