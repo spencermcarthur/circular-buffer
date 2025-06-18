@@ -10,3 +10,7 @@
 #ifndef CACHELINE_SIZE_BYTES
 #define CACHELINE_SIZE_BYTES 64
 #endif
+
+#ifndef MAX_SHARED_MEM_SIZE_MIB
+#define MAX_SHARED_MEM_SIZE_MIB 50
+#endif

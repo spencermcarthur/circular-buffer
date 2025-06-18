@@ -17,6 +17,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED 20)
 add_compile_options(-Wall -Wextra -Wpedantic)
 
 
+# Set max shared memory size in MiB
+if(NOT MAX_SHARED_MEM_SIZE_MIB)
+    set(MAX_SHARED_MEM_SIZE_MIB 50)
+    message(STATUS "MAX_SHARED_MEM_SIZE_MIB defaulting to ${MAX_SHARED_MEM_SIZE_MIB}")
+endif()
+
+
 # Get system cacheline size and define it (defaults to 64)
 if(NOT GETCONF_CLSIZE_VAR)
     set(GETCONF_CLSIZE_VAR "LEVEL1_DCACHE_LINESIZE")
@@ -36,8 +43,10 @@ endif()
 
 # Build type-specific compilation options
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Building Release configuration")
     add_compile_options(-Ofast)
 else()
+    message(STATUS "Building Debug configuration")
     add_compile_options(-ggdb3)
 endif()
 
