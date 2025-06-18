@@ -16,14 +16,15 @@
 
 SharedMemoryRegion::SharedMemoryRegion(std::string_view name,
                                        size_t requestedSize)
-    : m_DataSize(requestedSize), m_TotalSize(requestedSize + sizeof(int)) {
+    : m_DataSize(requestedSize),
+      m_TotalSize(requestedSize + DATA_OFFSET_BYTES) {
   const size_t nameLen = name.length();
 
   // Validate args
   if (nameLen < 1 || nameLen > NAME_MAX) {
     throw std::length_error(
         "Length of memoryRegionName must satisfy 0 < len <= 255");
-  } else if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE) {
+  } else if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE_BYTES) {
     throw std::domain_error(
         "requestedSize must be between 1B and 500MiB (inclusive)");
   }
@@ -168,7 +169,7 @@ void SharedMemoryRegion::MapSharedMem() {
   }
 
   m_RefCounter = reinterpret_cast<int *>(data);
-  m_Data = reinterpret_cast<void *>(m_RefCounter + sizeof(int));
+  m_Data = reinterpret_cast<void *>(m_RefCounter + DATA_OFFSET_BYTES);
 }
 
 void SharedMemoryRegion::UnmapSharedMem() noexcept {

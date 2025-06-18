@@ -10,9 +10,12 @@
 
 // Class for managing Linux shared memory
 class SharedMemoryRegion {
+  // Needed for putting the ref counter on its own cacheline
+  static constexpr size_t DATA_OFFSET_BYTES = CACHELINE_SIZE_BYTES;
+
 public:
-  // 500 MiB
-  static constexpr size_t MAX_SHARED_MEM_SIZE = 500 * 1024 * 1024;
+  // Arbitrary 500 MiB
+  static constexpr size_t MAX_SHARED_MEM_SIZE_BYTES = 500 * 1024 * 1024;
 
   SharedMemoryRegion(std::string_view memoryRegionName, size_t requestedSize);
   ~SharedMemoryRegion();
