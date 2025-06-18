@@ -11,14 +11,12 @@
 const char *g_ValidName = "/testing";
 const size_t g_Size = 1024 * 1024;  // 1 MiB
 
-TEST(SharedMemory, Construct) {
-    // Unlink shared memory if it already exists
-    if (CheckSharedMemExists(g_ValidName)) {
-        UnlinkSharedMem(g_ValidName);
+TEST(SharedMemory, ConstructorNewMemory) {
+    // Make sure shared memory doesn't exist
+    if (SharedMemExists(g_ValidName)) {
+        FreeSharedMem(g_ValidName);
     }
-
-    // Make sure it doesn't exist
-    ASSERT_FALSE(CheckSharedMemExists(g_ValidName));
+    ASSERT_FALSE(SharedMemExists(g_ValidName));
 
     // Create shared memory and verify that everything was initialized as
     // expected
@@ -30,39 +28,73 @@ TEST(SharedMemory, Construct) {
         EXPECT_EQ(shmem.ReferenceCount(), 1);
 
         // Check that shared memory was created
-        EXPECT_TRUE(CheckSharedMemExists(g_ValidName));
+        EXPECT_TRUE(SharedMemExists(g_ValidName));
+    }
+}
+
+TEST(SharedMemory, ConstructorExistingMemory) {
+    // Make sure shared memory doesn't exist
+    if (SharedMemExists(g_ValidName)) {
+        FreeSharedMem(g_ValidName);
+    }
+    ASSERT_FALSE(SharedMemExists(g_ValidName));
+
+    // Create an instance of SharedMemory
+    SharedMemory shmem1(g_ValidName, g_Size);
+
+    // Check that shared memory was created
+    EXPECT_TRUE(SharedMemExists(g_ValidName));
+
+    // Make sure we are the only instance
+    EXPECT_EQ(shmem1.ReferenceCount(), 1);
+
+    {
+        // Create a second instance
+        SharedMemory shmem2(g_ValidName, g_Size);
+
+        // Verify expected values
+        EXPECT_STREQ(g_ValidName, shmem2.Name().c_str());
+        EXPECT_EQ(g_Size, shmem2.Size());
+        EXPECT_EQ(shmem2.ReferenceCount(), 2);
+    }
+
+    // Make sure we didn't free the memory
+    EXPECT_TRUE(SharedMemExists(g_ValidName));
+
+    // Make sure the ref counter dropped
+    EXPECT_EQ(shmem1.ReferenceCount(), 1);
+}
+
+TEST(SharedMemory, DestructorFreeMemoryOnRefCountZero) {
+    // Make sure shared memory doesn't exist
+    if (SharedMemExists(g_ValidName)) {
+        FreeSharedMem(g_ValidName);
+    }
+    ASSERT_FALSE(SharedMemExists(g_ValidName));
+
+    {
+        // Create shared memory
+        SharedMemory shmem(g_ValidName, g_Size);
+
+        // Check that shared memory was created
+        EXPECT_TRUE(SharedMemExists(g_ValidName));
+
+        // Verify that we have the only handle
+        EXPECT_EQ(shmem.ReferenceCount(), 1);
     }
 
     // Check that shared memory was unlinked again when shmem was destroyed
-    EXPECT_FALSE(CheckSharedMemExists(g_ValidName));
-}
-
-TEST(SharedMemory, ConstructFailCases) {
-    // Invalid name - too short
-    EXPECT_THROW(SharedMemory("", 0), std::length_error);
-
-    // Invalid name - too long
-    char nameTooLong[SharedMemory::MAX_NAME_LEN + 2];
-    std::memset(nameTooLong, 'a', SharedMemory::MAX_NAME_LEN + 1);
-    EXPECT_THROW(SharedMemory(nameTooLong, 0), std::length_error);
-
-    // Invalid size - 0
-    EXPECT_THROW(SharedMemory(g_ValidName, 0), std::domain_error);
-
-    // Invalid size - too large
-    EXPECT_THROW(
-        SharedMemory(g_ValidName, SharedMemory::MAX_SHARED_MEM_SIZE_BYTES + 1),
-        std::domain_error);
+    EXPECT_FALSE(SharedMemExists(g_ValidName));
 }
 
 TEST(SharedMemory, ConstructMultiple) {
     // Unlink shared memory if it already exists
-    if (CheckSharedMemExists(g_ValidName)) {
-        UnlinkSharedMem(g_ValidName);
+    if (SharedMemExists(g_ValidName)) {
+        FreeSharedMem(g_ValidName);
     }
 
     // Make sure it doesn't exist
-    ASSERT_FALSE(CheckSharedMemExists(g_ValidName));
+    ASSERT_FALSE(SharedMemExists(g_ValidName));
 
     // Construct multiple shared memory regions and verify that reference
     // counter is increasing and decreasing as expected
@@ -87,5 +119,29 @@ TEST(SharedMemory, ConstructMultiple) {
     }
 
     // Check that shared memory was unlinked again when shmem was destroyed
-    EXPECT_FALSE(CheckSharedMemExists(g_ValidName));
+    EXPECT_FALSE(SharedMemExists(g_ValidName));
+}
+
+TEST(SharedMemory, FailIfNameTooShort) {
+    // Invalid name - too short
+    EXPECT_THROW(SharedMemory("", 0), std::length_error);
+}
+
+TEST(SharedMemory, FailIfNameTooLong) {
+    // Invalid name - too long
+    char nameTooLong[SharedMemory::MAX_NAME_LEN + 2];
+    std::memset(nameTooLong, 'a', SharedMemory::MAX_NAME_LEN + 1);
+    EXPECT_THROW(SharedMemory(nameTooLong, 0), std::length_error);
+}
+
+TEST(SharedMemory, FailIfRequestZeroBytes) {
+    // Invalid size - 0
+    EXPECT_THROW(SharedMemory(g_ValidName, 0), std::domain_error);
+}
+
+TEST(SharedMemory, FailIfRequestTooManyBytes) {
+    // Invalid size - too large
+    EXPECT_THROW(
+        SharedMemory(g_ValidName, SharedMemory::MAX_SHARED_MEM_SIZE_BYTES + 1),
+        std::domain_error);
 }
