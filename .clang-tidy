@@ -1,0 +1,2 @@
+Checks: 'readability-*,modernize-loop-convert,modernize-pass-by-value'
+HeaderFilterRegex: '.*'
