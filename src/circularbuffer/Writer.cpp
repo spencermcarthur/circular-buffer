@@ -2,19 +2,41 @@
 
 #include <atomic>
 #include <cstring>
+#include <format>
+#include <iostream>
+#include <stdexcept>
 
+#include "SemLock.hpp"
 #include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/IWrapper.hpp"
 #include "circularbuffer/Spec.hpp"
 
 namespace CircularBuffer {
 
-Writer::Writer(const Spec &spec) : IWrapper(spec) {
+Writer::Writer(const Spec& spec)
+    : IWrapper(spec), m_SemLock(spec.bufferSharedMemoryName + "-writer") {
+    EnsureSingleWriter();
+
     // Writer sets initial shared buffer iterators
     m_Iters->read.store(m_Buffer.begin(), std::memory_order_release);
     m_Iters->write.store(m_Buffer.begin(), std::memory_order_release);
 
     m_NextElement = m_Buffer.begin();
+}
+
+Writer::~Writer() {
+    if (!m_SemLock.Release()) {
+        std::cerr << std::format("({}:{}) Failed to unlock writer semaphore\n",
+                                 __FILE__, __LINE__);
+    }
+}
+
+void Writer::EnsureSingleWriter() {
+    if (!m_SemLock.Acquire()) {
+        throw std::runtime_error(
+            std::format("({}:{}) Another writer has locked the semaphore",
+                        __FILE__, __LINE__));
+    }
 }
 
 void Writer::Write(BufferT writeBuffer) {
