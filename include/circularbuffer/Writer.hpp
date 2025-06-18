@@ -7,15 +7,15 @@
 #include "Aliases.hpp"
 #include "Defines.hpp"
 #include "IWrapper.hpp"
-#include "SemLock.hpp"
+#include "SemaphoreLock.hpp"
 #include "Spec.hpp"
 
 namespace CircularBuffer {
 
-class Writer final : public IWrapper {
+class Writer : public IWrapper {
 public:
     explicit Writer(const Spec& spec);
-    ~Writer() final;
+    ~Writer() override;
 
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(Writer);
@@ -29,9 +29,9 @@ private:
     void EnsureSingleWriter();
 
     // Pointer to next write location
-    BufferIterT m_NextElement;
+    IterT m_NextElement;
     // Semaphore lock to ensure only a single reader ever gets instantiated
-    SemLock m_SemLock;
+    SemaphoreLock m_SemaphoreLock;
 };
 
 }  // namespace CircularBuffer

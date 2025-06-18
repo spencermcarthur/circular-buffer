@@ -7,10 +7,10 @@
 namespace CircularBuffer {
 
 // POD struct for maintaining buffer r/w indices in shared memory
-struct Iterators {
+struct Indices {
     // Cacheline alignement needed to avoid false sharing
-    alignas(CACHELINE_SIZE_BYTES) std::atomic<BufferIterT> read;
-    alignas(CACHELINE_SIZE_BYTES) std::atomic<BufferIterT> write;
+    alignas(CACHELINE_SIZE_BYTES) std::atomic<IndexT> read;
+    alignas(CACHELINE_SIZE_BYTES) std::atomic<IndexT> write;
 };
 
 }  // namespace CircularBuffer

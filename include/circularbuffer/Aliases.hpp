@@ -2,18 +2,17 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <span>
 
 namespace CircularBuffer {
 
 using DataT = std::byte;
 using BufferT = std::span<DataT>;
-using BufferIterT = BufferT::iterator;
+using IndexT = size_t;
+using IterT = BufferT::iterator;
 using MessageSizeT = uint16_t;
 
-// (2^16)-1 = 65535 bytes
-static constexpr MessageSizeT MAX_MESSAGE_SIZE_BYTES =
-    std::numeric_limits<MessageSizeT>::max();
+static constexpr size_t MAX_MESSAGE_SIZE = MAX_MESSAGE_SIZE_BYTES;
+static constexpr size_t HEADER_SIZE = sizeof(MessageSizeT);
 
 }  // namespace CircularBuffer
