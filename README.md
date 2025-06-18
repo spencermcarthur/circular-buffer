@@ -11,9 +11,9 @@ The implementation must include tests using Google Test (GTest).
 # Outline: Approach
 - C++ Standard: 20
 - Linux operating system (I'm using WSL 2 running Ubuntu 24.04.1 LTS)
-- IPC shared memory using Linux system calls
-    - Requesting shared memory: `shm_open`/`shm_unlink`
-    - Mapping shared memory to process virtual memory: `mmap`/`munmap`
+- IPC: shared memory using Linux system calls
+    - `shm_open`/`shm_unlink` for requesting shared memory from the kernel
+    - `mmap`/`munmap` for mapping shared memory to process virtual memory
 
 # Design
 
@@ -28,13 +28,13 @@ At destruction, unmaps shared memory from calling process's virtual memory via `
 
 Allows reinterpretation of the shared memory as a struct or a contiguous `span` of data via template methods.
 
-### `IWrapper`
+### `CircularBuffer::IWrapper`
 Interface class that owns `SharedMemoryRegion` objects and facilitates the simple implementation of `Reader` and `Writer` instances.
 
-### `Reader`
+### `CircularBuffer::Reader`
 Inherits from `IWrapper` and handles asynchronous reads from the buffer. Implements method `int Read(span<byte>)`.
 
-### `Writer`
+### `CircularBuffer::Writer`
 Inherits from `IWrapper` and handles asynchronous writes to the buffer. Implements method `void Write(span<byte>)`.
 
 ## Testing
