@@ -1,2 +1,7 @@
-Checks: 'clang-analyzer-*,readability-*,performance-*,modernize-*,misc-*,google-*,-modernize-use-trailing-return-type,-google-readability-todo,-misc-non-private-member-variables-in-classes'
+Checks: '-*,clang-analyzer-*,readability-*,performance-*,modernize-*,misc-*,google-*,
+    -modernize-use-trailing-return-type,
+    -modernize-avoid-c-arrays,
+    -modernize-use-auto,
+    -google-readability-todo,
+    -misc-non-private-member-variables-in-classes'
 HeaderFilterRegex: '.*'
