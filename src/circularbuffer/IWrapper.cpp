@@ -11,15 +11,22 @@
 namespace CircularBuffer {
 
 IWrapper::IWrapper(const Spec &spec) {
+    // Validate requested buffer size
+    if (spec.bufferCapacity < MIN_BUFFER_SIZE) {
+        throw std::domain_error(std::format(
+            "({}:{}) Buffer size {} is too small: minimum is {}", __FILE__,
+            __LINE__, spec.bufferCapacity, MIN_BUFFER_SIZE));
+    }
+
     // Load/map shared memory regions
     m_IndexRegion =
-        new SharedMemory(spec.indexSharedMemoryName, sizeof(Iterators));
-    m_BufferRegion =
-        new SharedMemory(spec.bufferSharedMemoryName, spec.bufferCapacity);
+        new SharedMemory(spec.indexSharedMemoryName, sizeof(Indices));
+    m_DataRegion =
+        new SharedMemory(spec.dataSharedMemoryName, spec.bufferCapacity);
 
-    // Reinterpret indices region as struct and verify
-    m_Iters = m_IndexRegion->AsStruct<Iterators>();
-    if (m_Iters == nullptr) {
+    // Reinterpret index region as struct and verify
+    m_Indices = m_IndexRegion->AsStruct<Indices>();
+    if (m_Indices == nullptr) {
         // Fail
         throw std::runtime_error(std::format(
             "({}:{}) Reinterpretation of index shared memory as struct failed",
@@ -27,7 +34,7 @@ IWrapper::IWrapper(const Spec &spec) {
     }
 
     // Reinterpret buffer region as span and verify
-    m_Buffer = m_BufferRegion->AsSpan<DataT>();
+    m_Buffer = m_DataRegion->AsSpan<DataT>();
     if (m_Buffer.data() == nullptr || m_Buffer.empty()) {
         // Fail
         throw std::runtime_error(std::format(
@@ -35,14 +42,14 @@ IWrapper::IWrapper(const Spec &spec) {
             __FILE__, __LINE__));
     }
 
-    // Set local iterator
-    m_LocalIter = m_Buffer.begin();
+    // Set local index
+    m_LocalIndex = 0;
 }
 
 IWrapper::~IWrapper() {
-    m_Iters = nullptr;
+    m_Indices = nullptr;
 
-    delete m_BufferRegion;
+    delete m_DataRegion;
     delete m_IndexRegion;
 }
 
