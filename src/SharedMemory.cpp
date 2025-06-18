@@ -1,4 +1,5 @@
 #include "SharedMemory.hpp"
+#include "SemLock.hpp"
 
 #include <atomic>
 #include <cerrno>
@@ -8,16 +9,16 @@
 #include <format>
 #include <iostream>
 #include <linux/limits.h>
+#include <semaphore.h>
 #include <stdexcept>
 #include <string_view>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-SharedMemory::SharedMemory(std::string_view name,
-                                       size_t requestedSize)
-    : m_DataSize(requestedSize),
-      m_TotalSize(requestedSize + DATA_OFFSET_BYTES) {
+SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
+    : m_DataSize(requestedSize), m_TotalSize(requestedSize + DATA_OFFSET_BYTES),
+      m_SemLock(name) {
   const size_t nameLen = name.length();
 
   // Validate args
@@ -52,24 +53,29 @@ SharedMemory::SharedMemory(std::string_view name,
   MapSharedMem();
 
   // Increment ref counter
-  std::atomic_ref<int>(*m_RefCounter).fetch_add(1, std::memory_order_release);
+  std::atomic_ref<int> refCount(*m_RefCounter);
+  refCount.fetch_add(1, std::memory_order_release);
 }
 
 SharedMemory::~SharedMemory() {
   // Check before dereferencing
   if (m_RefCounter != nullptr) {
-    // Decrement ref counter, and capture value before CAS operation
-    const int prevRefCount = std::atomic_ref<int>(*m_RefCounter)
-                                 .fetch_sub(1, std::memory_order_release);
+    std::atomic_ref<int> refCounter(*m_RefCounter);
 
+    // Decrement ref counter, and capture value before CAS operation
+    const int refCount = refCounter.fetch_sub(1, std::memory_order_release) - 1;
+
+    // Unmap from process virt mem
     UnmapSharedMem();
 
-    if (prevRefCount == 1) {
+    // If ref count is 0, schedule free
+    if (refCount == 0) {
       UnlinkSharedMem();
     }
-
-    CloseSharedMem();
   }
+
+  // Close file handle
+  CloseSharedMem();
 
   delete[] m_Name;
 }
@@ -127,6 +133,10 @@ void SharedMemory::CloseSharedMem() noexcept {
 }
 
 void SharedMemory::LinkSharedMem() {
+  // Try to lock semaphore
+  if (!m_SemLock.Acquire())
+    return;
+
   // Create new shared memory in system
   int fd = shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
   if (fd == -1) {
@@ -145,9 +155,15 @@ void SharedMemory::LinkSharedMem() {
         std::format("({}:{}) failed to allocate shared memory for name {}: {}",
                     __FILE__, __LINE__, m_Name, strerror(err)));
   }
+
+  m_SemLock.Release();
 }
 
 void SharedMemory::UnlinkSharedMem() noexcept {
+  // Try to lock semaphore before unlinking
+  if (!m_SemLock.Acquire())
+    return;
+
   if (shm_unlink(m_Name) == -1) {
     // Failed
     const int err = errno;
@@ -155,6 +171,8 @@ void SharedMemory::UnlinkSharedMem() noexcept {
                              __LINE__, m_Name, strerror(err))
               << std::endl;
   }
+
+  m_SemLock.Release();
 }
 
 void SharedMemory::MapSharedMem() {

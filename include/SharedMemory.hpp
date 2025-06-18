@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Defines.hpp"
+#include "SemLock.hpp"
 
 #include <cstddef>
 #include <linux/limits.h>
@@ -60,6 +61,7 @@ private:
   bool OpenSharedMem();
   // Close shared memory file without unlinking
   void CloseSharedMem() noexcept;
+
   // Create a shared memory location if it doesn't exist using shm_open
   void LinkSharedMem();
   // Unlink a shared memory location using shm_unlink
@@ -86,4 +88,6 @@ private:
   const size_t m_TotalSize;
   // For storing the FD that describes our shared memory
   int m_FileDes{-1};
+  // Semaphore lock for synchronizing linking/unlinking of shared memory
+  SemLock m_SemLock;
 };
