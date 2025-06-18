@@ -3,7 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace CircularBuffer {
+
 using IndexType = int64_t;
 using DataType = std::byte;
 
 static constexpr size_t MAX_MSG_SIZE_BYTES = (1 << 16) - 1;
+
+} // namespace CircularBuffer

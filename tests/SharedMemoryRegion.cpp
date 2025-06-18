@@ -19,10 +19,9 @@ TEST(SharedMemoryRegion, Construct) {
   {
     SharedMemoryRegion shmem(g_Name, g_Size);
 
-    EXPECT_STREQ(g_Name, shmem.Name());
+    EXPECT_STREQ(g_Name, shmem.Name().c_str());
     EXPECT_EQ(g_Size, shmem.Size());
     EXPECT_EQ(shmem.ReferenceCount(), 1);
-    EXPECT_FALSE(shmem.IsReadOnly());
 
     // Check that shared memory was created
     EXPECT_TRUE(CheckSharedMemExists(g_Name));

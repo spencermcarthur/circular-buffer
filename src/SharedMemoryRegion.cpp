@@ -8,31 +8,29 @@
 #include <format>
 #include <iostream>
 #include <linux/limits.h>
-#include <span>
 #include <stdexcept>
+#include <string_view>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <utility>
 
-SharedMemoryRegion::SharedMemoryRegion(const char *name, size_t requestedSize,
-                                       bool readOnly)
-    : m_DataSize(requestedSize), m_TotalSize(requestedSize + sizeof(int)),
-      m_IsReadOnly(readOnly) {
-  const size_t nameLen = std::strlen(name);
+SharedMemoryRegion::SharedMemoryRegion(std::string_view name,
+                                       size_t requestedSize)
+    : m_DataSize(requestedSize), m_TotalSize(requestedSize + sizeof(int)) {
+  const size_t nameLen = name.length();
 
   // Validate args
   if (nameLen < 1 || nameLen > NAME_MAX) {
     throw std::length_error(
         "Length of memoryRegionName must satisfy 0 < len <= 255");
-  } else if (requestedSize < 1 || requestedSize > MAX_SHMMEM_SIZE) {
+  } else if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE) {
     throw std::domain_error(
         "requestedSize must be between 1B and 500MiB (inclusive)");
   }
 
   // Copy name
   m_Name = new char[nameLen + 1]{};
-  std::strncpy(m_Name, name, nameLen);
+  std::strncpy(m_Name, name.data(), nameLen);
 
   // If we can't open shared memory at m_Name
   if (!OpenSharedMem()) {
@@ -75,44 +73,6 @@ SharedMemoryRegion::~SharedMemoryRegion() {
   delete[] m_Name;
 }
 
-template <typename T> T *SharedMemoryRegion::Data() const {
-  T *data{nullptr};
-
-  // Make sure that m_Data hasn't been unmapped, and check that it fits exactly
-  // into type T
-  if (m_Data && sizeof(T) == m_DataSize) {
-    data = reinterpret_cast<T *>(m_Data);
-  }
-
-  return data;
-}
-
-template <typename T> std::span<T> SharedMemoryRegion::Data() const {
-  T *data{nullptr};
-  size_t size{0};
-
-  // Make sure that m_Data hasn't been unmapped
-  if (m_Data) {
-    data = reinterpret_cast<T *>(m_Data);
-    size = m_DataSize;
-  }
-
-  return std::span<T>(data, size);
-}
-
-std::pair<int, mode_t> GetArgs(bool isReadOnly) {
-  int flags;
-  mode_t mode;
-  if (isReadOnly) {
-    flags = O_RDONLY;
-    mode = S_IRUSR;
-  } else {
-    flags = O_RDWR;
-    mode = S_IRUSR + S_IWUSR;
-  }
-  return {flags, mode};
-}
-
 int SharedMemoryRegion::ReferenceCount() const {
   int refCount{-1};
   if (m_RefCounter) {
@@ -123,10 +83,8 @@ int SharedMemoryRegion::ReferenceCount() const {
 }
 
 bool SharedMemoryRegion::OpenSharedMem() {
-  const auto [flags, mode] = GetArgs(m_IsReadOnly);
-
   // Try to open shared memory file
-  int fd = shm_open(m_Name, flags, mode);
+  int fd = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
   if (fd == -1) {
     // Failed
     return false;
@@ -200,8 +158,8 @@ void SharedMemoryRegion::UnlinkSharedMem() noexcept {
 
 void SharedMemoryRegion::MapSharedMem() {
   // Map shared memory to our process's virtual memory
-  const int prot = m_IsReadOnly ? PROT_READ : PROT_READ | PROT_WRITE;
-  void *data = mmap(NULL, m_TotalSize, prot, MAP_SHARED, m_FileDes, 0);
+  void *data =
+      mmap(NULL, m_TotalSize, PROT_READ | PROT_WRITE, MAP_SHARED, m_FileDes, 0);
   if (data == MAP_FAILED) {
     // Failed to map
     const int err = errno;
