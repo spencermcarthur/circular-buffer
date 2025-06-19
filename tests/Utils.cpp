@@ -5,6 +5,9 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <cstring>
+#include <format>
+#include <stdexcept>
 
 bool SharedMemExists(const char *name) {
     bool exists{true};
@@ -22,7 +25,21 @@ void RequestSharedMem(const char *name, size_t size) {
         return;
     }
 
-    ftruncate(fileDesc, size);
+    if (ftruncate(fileDesc, size) == -1) {
+        throw std::runtime_error(std::format(
+            "({}:{}) Failed to allocate memory for shared memory {}", __FILE__,
+            __LINE__, name));
+    }
 }
 
 void FreeSharedMem(const char *name) { shm_unlink(name); }
+
+using namespace CircularBuffer;
+
+BufferT MakeBuffer(const size_t size, char fill) {
+    DataT *data = new DataT[size]{};
+    if (fill != '\0') {
+        std::memset(data, fill, size);
+    }
+    return BufferT{data, size};
+}

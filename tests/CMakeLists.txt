@@ -1,36 +1,35 @@
+find_package(GTest REQUIRED)
 enable_testing()
 
-find_package(GTest REQUIRED)
-
 # Testing library
-add_library(Testing SHARED EXCLUDE_FROM_ALL
-    Utils.cpp)
+add_library(testing SHARED EXCLUDE_FROM_ALL Utils.cpp)
 
-link_libraries(CircularBuffer Testing GTest::gtest GTest::gtest_main)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+link_libraries(circularbuffer testing GTest::gtest GTest::gtest_main)
 
-############################## TESTS ##############################
+############################## UNIT TESTS #########################
 # SemaphoreLock
-add_executable(SemaphoreLock EXCLUDE_FROM_ALL SemaphoreLock.cpp)
-add_test(NAME SemaphoreLock COMMAND SemaphoreLock)
+add_executable(SemaphoreLockTests EXCLUDE_FROM_ALL SemaphoreLock.cpp)
+add_test(NAME SemaphoreLockTests COMMAND SemaphoreLockTests)
 
 # SharedMemory
-add_executable(SharedMemory EXCLUDE_FROM_ALL SharedMemory.cpp)
-add_test(NAME SharedMemory COMMAND SharedMemory)
+add_executable(SharedMemoryTests EXCLUDE_FROM_ALL SharedMemory.cpp)
+add_test(NAME SharedMemoryTests COMMAND SharedMemoryTests)
 
 # Writer
-add_executable(Writer EXCLUDE_FROM_ALL Writer.cpp)
-add_test(NAME Writer COMMAND Writer)
+add_executable(WriterTests EXCLUDE_FROM_ALL Writer.cpp)
+add_test(NAME WriterTests COMMAND WriterTests)
 
 # Reader
-add_executable(Reader EXCLUDE_FROM_ALL Reader.cpp)
-add_test(NAME Reader COMMAND Reader)
+add_executable(ReaderTests EXCLUDE_FROM_ALL Reader.cpp)
+add_test(NAME ReaderTests COMMAND ReaderTests)
 ###################################################################
 
-# Target for building all tests
-add_custom_target(tests
+# Target for building all unit tests
+add_custom_target(UnitTests
     DEPENDS
-        SemaphoreLock
-        SharedMemory
-        Writer
-        Reader
+        SemaphoreLockTests
+        SharedMemoryTests
+        WriterTests
+        ReaderTests
 )

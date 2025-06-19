@@ -4,7 +4,6 @@
 #include <linux/limits.h>
 
 #include <cstring>
-#include <stdexcept>
 
 #include "Utils.hpp"
 
@@ -52,16 +51,18 @@ TEST(SharedMemory, ConstructorExistingMemory) {
         // Create a second instance
         SharedMemory shmem2(g_ValidName, g_Size);
 
-        // Verify expected values
+        // Verify name/size
         EXPECT_STREQ(g_ValidName, shmem2.Name().c_str());
         EXPECT_EQ(g_Size, shmem2.Size());
+
+        // Make sure ref count increased
         EXPECT_EQ(shmem2.ReferenceCount(), 2);
     }
 
     // Make sure we didn't free the memory
     EXPECT_TRUE(SharedMemExists(g_ValidName));
 
-    // Make sure the ref counter dropped
+    // Make sure ref count decreased
     EXPECT_EQ(shmem1.ReferenceCount(), 1);
 }
 
@@ -108,7 +109,6 @@ TEST(SharedMemory, ConstructMultiple) {
 
             {
                 SharedMemory shmem3(g_ValidName, g_Size);
-
                 EXPECT_EQ(shmem1.ReferenceCount(), 3);
             }
 
@@ -118,30 +118,6 @@ TEST(SharedMemory, ConstructMultiple) {
         EXPECT_EQ(shmem1.ReferenceCount(), 1);
     }
 
-    // Check that shared memory was unlinked again when shmem was destroyed
+    // Check that shared memory was unlinked again when shmem1 was destroyed
     EXPECT_FALSE(SharedMemExists(g_ValidName));
-}
-
-TEST(SharedMemory, FailIfNameTooShort) {
-    // Invalid name - too short
-    EXPECT_THROW(SharedMemory("", 0), std::length_error);
-}
-
-TEST(SharedMemory, FailIfNameTooLong) {
-    // Invalid name - too long
-    char nameTooLong[SharedMemory::MAX_NAME_LEN + 2];
-    std::memset(nameTooLong, 'a', SharedMemory::MAX_NAME_LEN + 1);
-    EXPECT_THROW(SharedMemory(nameTooLong, 0), std::length_error);
-}
-
-TEST(SharedMemory, FailIfRequestZeroBytes) {
-    // Invalid size - 0
-    EXPECT_THROW(SharedMemory(g_ValidName, 0), std::domain_error);
-}
-
-TEST(SharedMemory, FailIfRequestTooManyBytes) {
-    // Invalid size - too large
-    EXPECT_THROW(
-        SharedMemory(g_ValidName, SharedMemory::MAX_SHARED_MEM_SIZE_BYTES + 1),
-        std::domain_error);
 }

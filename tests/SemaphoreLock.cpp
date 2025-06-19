@@ -13,6 +13,18 @@ TEST(SemaphoreLock, Constructor) {
     EXPECT_NO_THROW(SemaphoreLock{g_ValidName});
 }
 
+TEST(SemaphoreLock, ConstructorFailIfNameTooShort) {
+    // Invalid name - 0 length
+    EXPECT_THROW(SemaphoreLock{""}, std::length_error);
+}
+
+TEST(SemaphoreLock, ConstructorFailIfNameTooLong) {
+    // Invalid name - too long
+    char nameTooLong[SemaphoreLock::MAX_SEM_NAME_LEN + 2]{};
+    std::memset(nameTooLong, 'a', SemaphoreLock::MAX_SEM_NAME_LEN + 1);
+    EXPECT_THROW(SemaphoreLock{nameTooLong}, std::length_error);
+}
+
 TEST(SemaphoreLock, AcquireRelease) {
     // Construct 2 semaphore locks on /testing
     SemaphoreLock sl1(g_ValidName);
@@ -28,7 +40,7 @@ TEST(SemaphoreLock, AcquireRelease) {
     EXPECT_TRUE(sl2.Release());
 }
 
-TEST(SemaphoreLock, ReleaseOnDestruction) {
+TEST(SemaphoreLock, DestructorRelease) {
     // Construct and test
     SemaphoreLock sl1(g_ValidName);
     EXPECT_TRUE(sl1.Acquire());
@@ -44,16 +56,4 @@ TEST(SemaphoreLock, ReleaseOnDestruction) {
     // First lock should be able to acquire
     EXPECT_TRUE(sl1.Acquire());
     EXPECT_TRUE(sl1.Release());
-}
-
-TEST(SemaphoreLock, FailIfNameTooShort) {
-    // Invalid name - 0 length
-    EXPECT_THROW(SemaphoreLock{""}, std::length_error);
-}
-
-TEST(SemaphoreLock, FailIfNameTooLong) {
-    // Invalid name - too long
-    char nameTooLong[SemaphoreLock::MAX_SEM_NAME_LEN + 2]{};
-    std::memset(nameTooLong, 'a', SemaphoreLock::MAX_SEM_NAME_LEN + 1);
-    EXPECT_THROW(SemaphoreLock{nameTooLong}, std::length_error);
 }
