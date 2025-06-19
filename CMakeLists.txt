@@ -66,9 +66,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 else()
     message(STATUS "Building Debug configuration")
     add_compile_options(-ggdb3)
+    add_compile_definitions(DEBUG=1 SPDLOG_ACTIVE_LEVEL=1)
 endif()
 
 
 # Subdirs
+add_subdirectory(${CMAKE_SOURCE_DIR}/benchmarks)
+add_subdirectory(${CMAKE_SOURCE_DIR}/bin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
