@@ -2,43 +2,54 @@
 
 #include <fcntl.h>
 #include <semaphore.h>
+#include <sys/stat.h>
 
 #include <atomic>
 #include <cerrno>
 #include <cstring>
 #include <format>
-#include <iostream>
 #include <stdexcept>
 #include <string_view>
 
+#include "Defines.hpp"
+#include "Utils.hpp"
+#include "spdlog/spdlog.h"
+
+#define OPEN_READ_WRITE S_IRUSR + S_IWUSR
+
 SemaphoreLock::SemaphoreLock(std::string_view name) {
+    SetupSpdlog();
+
     // Validate name
     if (name.empty() || name.length() > MAX_SEM_NAME_LEN) {
-        throw std::length_error(std::format(
-            "({}:{}) Semaphore name \"{}\" of length {} is invalid: "
-            "max name length for a semaphore is {}",
-            __FILE__, __LINE__, name, name.size(), MAX_SEM_NAME_LEN));
+        CONSTEXPR_SV fmt =
+            "({}:{}) Semaphore name \"{}\" of length {} is invalid: length "
+            "must be 0 < len <= {}";
+        SPDLOG_ERROR(fmt.substr(8), name, name.length(), MAX_SEM_NAME_LEN);
+        throw std::length_error(std::format(fmt, __FILE__, __LINE__, name,
+                                            name.length(), MAX_SEM_NAME_LEN));
     }
 
     // Copy name
     m_Name = new char[name.size() + 1]{};
-    std::strncpy(m_Name, name.data(), name.size());
+    std::strncpy(m_Name, name.data(), name.length());
 
     // Try to create the semaphore
-    sem_t *sem = sem_open(m_Name, O_CREAT | O_EXCL, OPEN_MODE_RDWR, 1);
+    sem_t *sem = sem_open(m_Name, O_CREAT | O_EXCL, OPEN_READ_WRITE, 1);
     if (sem == SEM_FAILED) {
         // Failed
         if (errno == EEXIST) {
             // Already existed - just open it
-            sem = sem_open(m_Name, 0, OPEN_MODE_RDWR);
+            sem = sem_open(m_Name, 0, OPEN_READ_WRITE);
         }
 
         if (sem == SEM_FAILED) {
             // Failed again
             const int err = errno;
+            CONSTEXPR_SV fmt = "({}:{}) Failed to open semaphore \"{}\": {}";
+            SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
             throw std::runtime_error(
-                std::format("({}:{}) Failed to open semaphore {}: {}", __FILE__,
-                            __LINE__, m_Name, strerror(err)));
+                std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
         }
     }
 
@@ -49,9 +60,8 @@ SemaphoreLock::~SemaphoreLock() {
     if (m_HoldsOwnership.load(std::memory_order_acquire)) {
         int err;
         if (!Release(err)) {
-            std::cerr << std::format(
-                "({}:{}) Failed to release smaphore {}: {}", __FILE__, __LINE__,
-                m_Name, strerror(err));
+            SPDLOG_ERROR("Failed to release smaphore \"{}\": {}", m_Name,
+                         strerror(err));
         }
     }
 
@@ -59,8 +69,8 @@ SemaphoreLock::~SemaphoreLock() {
     if (ret == -1) {
         // Failed - print error
         const int err = errno;
-        std::cerr << std::format("({}:{}) Failed to close semaphore {}: {}\n",
-                                 __FILE__, __LINE__, m_Name, strerror(err));
+        SPDLOG_ERROR("Failed to close semaphore \"{}\": {}", m_Name,
+                     strerror(err));
     }
 
     delete[] m_Name;

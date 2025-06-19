@@ -10,26 +10,39 @@
 #include <cstddef>
 #include <cstring>
 #include <format>
-#include <iostream>
 #include <stdexcept>
 #include <string_view>
 
+#include "Defines.hpp"
 #include "SemaphoreLock.hpp"
+#include "Utils.hpp"
+#include "spdlog/common.h"
+#include "spdlog/spdlog.h"
 
 SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
     : m_DataSize(requestedSize),
       m_TotalSize(requestedSize + DATA_OFFSET_BYTES),
       m_SemaphoreLock(name) {
+    SetupSpdlog();
+
     const size_t nameLen = name.length();
 
     // Validate args
     if (nameLen < 1 || nameLen > MAX_NAME_LEN) {
+        CONSTEXPR_SV fmt =
+            "({}:{}) Memory region name \"{}\" of length {} is invalid: length "
+            "must be 0 < len <= {}";
+        SPDLOG_ERROR(fmt.substr(8), name, nameLen, MAX_NAME_LEN);
         throw std::length_error(
-            "Length of memoryRegionName must satisfy 0 < len <= 255");
+            std::format(fmt, __FILE__, __LINE__, name, nameLen, MAX_NAME_LEN));
     }
-    if (requestedSize < 1 || requestedSize > MAX_SHARED_MEM_SIZE_BYTES) {
-        throw std::domain_error(
-            "requestedSize must be between 1B and 500MiB (inclusive)");
+    if (requestedSize < 1 || requestedSize > MAX_SIZE_BYTES) {
+        CONSTEXPR_SV fmt =
+            "({}:{}) Requested memory region of size {} B is "
+            "invalid: size must be between 1 and {} bytes";
+        SPDLOG_ERROR(fmt.substr(8), requestedSize, MAX_SIZE_BYTES);
+        throw std::domain_error(std::format(fmt, __FILE__, __LINE__,
+                                            requestedSize, MAX_SIZE_BYTES));
     }
 
     // Copy name
@@ -45,9 +58,11 @@ SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
         // open it, then fail
         if (!OpenSharedMem()) {
             const int err = errno;
+            CONSTEXPR_SV fmt =
+                "({}:{}) Failed to open shared memory for {}: {}";
+            SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
             throw std::runtime_error(
-                std::format("({}:{}) Failed to open shared memory for {}: {}",
-                            __FILE__, __LINE__, m_Name, strerror(err)));
+                std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
         }
     }
 
@@ -105,17 +120,20 @@ bool SharedMemory::OpenSharedMem() {
     if (fstat(fileDesc, &buf) == -1) {
         // Failed
         const int err = errno;
-        throw std::runtime_error(std::format("({}:{}) fstat failed for {}: {}",
-                                             __FILE__, __LINE__, m_Name,
-                                             strerror(err)));
+        CONSTEXPR_SV fmt = "({}:{}) fstat failed for shared memory \"{}\": {}";
+        SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
+        throw std::runtime_error(
+            std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
     }
 
     // Check that existing shared memory's size is what's expected
     if (static_cast<size_t>(buf.st_size) != m_TotalSize) {
-        throw std::runtime_error(std::format(
-            "({}:{}) requested shared memory size {} does not match "
-            "existing shared memory size {} for name {}",
-            __FILE__, __LINE__, buf.st_size, m_DataSize, m_Name));
+        CONSTEXPR_SV fmt =
+            "({}:{}) Requested shared memory size {} does not match existing "
+            "shared memory size {} for name \"{}\"";
+        SPDLOG_ERROR(fmt.substr(8), buf.st_size, m_DataSize, m_Name);
+        throw std::runtime_error(std::format(fmt, __FILE__, __LINE__,
+                                             buf.st_size, m_DataSize, m_Name));
     }
 
     m_FileDes = fileDesc;
@@ -127,9 +145,9 @@ void SharedMemory::CloseSharedMem() noexcept {
     if (close(m_FileDes) == -1) {
         // Failed
         const int err = errno;
-        std::cerr << std::format(
-            "({}:{}) Failed to close shared memory file descriptor: {}",
-            __FILE__, __LINE__, strerror(err));
+        SPDLOG_ERROR("Failed to close shared memory file descriptor: {}",
+                     strerror(err));
+        return;
     }
 
     m_FileDes = -1;
@@ -147,18 +165,22 @@ void SharedMemory::LinkSharedMem() {
     if (fileDesc == -1) {
         // Failed
         const int err = errno;
-        throw std::runtime_error(std::format(
-            "({}:{}) failed to create shared memory entry for name {}: {}",
-            __FILE__, __LINE__, m_Name, strerror(err)));
+        CONSTEXPR_SV fmt =
+            "({}:{}) Failed to create shared memory entry for name \"{}\": {}";
+        SPDLOG_ERROR(fmt.substr(7), m_Name, strerror(err));
+        throw std::runtime_error(
+            std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
     }
 
     // Allocate m_Size bytes
     if (ftruncate(fileDesc, m_TotalSize) == -1) {
         // Failed
         const int err = errno;
-        throw std::runtime_error(std::format(
-            "({}:{}) failed to allocate shared memory for name {}: {}",
-            __FILE__, __LINE__, m_Name, strerror(err)));
+        CONSTEXPR_SV fmt =
+            "({}:{}) failed to allocate shared memory for name {}: {}";
+        SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
+        throw std::runtime_error(
+            std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
     }
 
     m_SemaphoreLock.Release();
@@ -173,8 +195,9 @@ void SharedMemory::UnlinkSharedMem() noexcept {
     if (shm_unlink(m_Name) == -1) {
         // Failed
         const int err = errno;
-        std::cerr << std::format("({}:{}) Failed to unlink {}: {}\n", __FILE__,
-                                 __LINE__, m_Name, strerror(err));
+        SPDLOG_ERROR("Failed to unlink shared memory {}: {}", m_Name,
+                     strerror(err));
+        return;
     }
 
     m_SemaphoreLock.Release();
@@ -187,8 +210,10 @@ void SharedMemory::MapSharedMem() {
     if (data == MAP_FAILED) {
         // Failed to map
         const int err = errno;
-        throw std::runtime_error(std::format(
-            "({}:{}) Failed to map: {}", __FILE__, __LINE__, strerror(err)));
+        CONSTEXPR_SV fmt = "({}:{}) Failed to map shared memory: {}";
+        SPDLOG_ERROR(fmt.substr(8), strerror(err));
+        throw std::runtime_error(
+            std::format(fmt, __FILE__, __LINE__, strerror(err)));
     }
 
     m_RefCounter = reinterpret_cast<int *>(data);
@@ -199,8 +224,8 @@ void SharedMemory::UnmapSharedMem() noexcept {
     if (munmap(reinterpret_cast<void *>(m_RefCounter), m_TotalSize) == -1) {
         // Failed to unmap
         const int err = errno;
-        std::cerr << std::format("({}:{}) Failed to unmap: {}\n", __FILE__,
-                                 __LINE__, strerror(err));
+        SPDLOG_ERROR("Failed to unmap shared memory: {}", strerror(err));
+        return;
     }
 
     m_RefCounter = nullptr;
