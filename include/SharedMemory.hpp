@@ -20,7 +20,7 @@ public:
     // https://man7.org/linux/man-pages/man3/shm_open.3.html
     static constexpr size_t MAX_NAME_LEN = NAME_MAX;
     // Arbitrary 500 MiB
-    static constexpr size_t MAX_SHARED_MEM_SIZE_BYTES =
+    static constexpr size_t MAX_SIZE_BYTES =
         MAX_SHARED_MEM_SIZE_MIB * 1024 * 1024;
 
     SharedMemory(std::string_view shMemName, size_t requestedSize);

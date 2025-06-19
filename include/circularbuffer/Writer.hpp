@@ -3,6 +3,7 @@
 #include <semaphore.h>
 
 #include <cstddef>
+#include <string>
 
 #include "Aliases.hpp"
 #include "Defines.hpp"
@@ -21,17 +22,19 @@ public:
     EXPLICIT_DELETE_CONSTRUCTORS(Writer);
 
     // Writes data to buffer in shared memory
-    void Write(BufferT writeBuffer);
+    bool Write(BufferT writeBuffer);
     // Compatibility interface
-    void Write(DataT* data, size_t size) { Write({data, size}); }
+    bool Write(DataT* data, size_t size) { return Write({data, size}); }
 
 private:
-    void EnsureSingleWriter();
+    void EnsureSingleton();
 
     // Pointer to next write location
     IterT m_NextElement;
     // Semaphore lock to ensure only a single reader ever gets instantiated
     SemaphoreLock m_SemaphoreLock;
 };
+
+std::string MakeWriterSemaphoreName(const Spec& spec);
 
 }  // namespace CircularBuffer

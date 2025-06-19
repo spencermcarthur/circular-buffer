@@ -11,8 +11,6 @@
 
 // Semaphore lock class
 class SemaphoreLock {
-    static constexpr int OPEN_MODE_RDWR = 0600;
-
 public:
     // See "DESCRIPTION/Named semaphores" at
     // https://man7.org/linux/man-pages/man7/sem_overview.7.html
@@ -27,6 +25,8 @@ public:
     bool Acquire(int &err) noexcept;
     bool Release() noexcept;
     bool Release(int &err) noexcept;
+
+    [[nodiscard]] std::string_view Name() const { return m_Name; }
 
 private:
     char *m_Name{nullptr};

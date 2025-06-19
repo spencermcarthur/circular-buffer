@@ -18,3 +18,5 @@
 #ifndef CACHELINE_SIZE_BYTES
 #define CACHELINE_SIZE_BYTES 64
 #endif
+
+#define CONSTEXPR_SV constexpr std::string_view

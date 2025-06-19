@@ -16,10 +16,16 @@ public:
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(Reader);
 
-    // Returns number of bytes read, 0 if nothing to read
+    // Returns positive int if buffer read-from successfully, or 0 if there is
+    // no data to read. Returns -1 if the read buffer is too small. Returns
+    // `INT_MIN` if the Reader got overwritten by the Writer.
     int Read(BufferT readBuffer);
     // Compatibility interface
     int Read(DataT *data, size_t size) { return Read({data, size}); }
+
+private:
+    IndexT m_CachedReadIdx;
+    IndexT m_CachedWriteIdx;
 };
 
 }  // namespace CircularBuffer
