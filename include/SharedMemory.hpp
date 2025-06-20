@@ -96,5 +96,5 @@ private:
     // For storing the FD that describes our shared memory
     int m_FileDes{-1};
     // Semaphore lock for synchronizing linking/unlinking of shared memory
-    SemaphoreLock m_SemaphoreLock;
+    SemaphoreLock m_SemLock;
 };

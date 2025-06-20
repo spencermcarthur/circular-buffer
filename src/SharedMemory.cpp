@@ -22,7 +22,7 @@
 SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
     : m_DataSize(requestedSize),
       m_TotalSize(requestedSize + DATA_OFFSET_BYTES),
-      m_SemaphoreLock(name) {
+      m_SemLock(name) {
     SetupSpdlog();
 
     const size_t nameLen = name.length();
@@ -165,7 +165,7 @@ void SharedMemory::CloseSharedMemFile() noexcept {
 
 void SharedMemory::AllocSharedMem(std::string_view name) {
     // Try to lock semaphore
-    if (!m_SemaphoreLock.Acquire()) {
+    if (!m_SemLock.Acquire()) {
         return;
     }
 
@@ -195,12 +195,12 @@ void SharedMemory::AllocSharedMem(std::string_view name) {
 
     SPDLOG_DEBUG("Allocated shared memory {} of size {}", name, m_DataSize);
 
-    m_SemaphoreLock.Release();
+    m_SemLock.Release();
 }
 
 void SharedMemory::FreeSharedMem() noexcept {
     // Try to lock semaphore before unlinking
-    if (!m_SemaphoreLock.Acquire()) {
+    if (!m_SemLock.Acquire()) {
         return;
     }
 
@@ -214,7 +214,7 @@ void SharedMemory::FreeSharedMem() noexcept {
 
     SPDLOG_DEBUG("Freed shared memory {}", m_Name);
 
-    m_SemaphoreLock.Release();
+    m_SemLock.Release();
 }
 
 #pragma GCC diagnostic push

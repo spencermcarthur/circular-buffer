@@ -19,7 +19,7 @@
 namespace CircularBuffer {
 
 Writer::Writer(const Spec& spec)
-    : IWrapper(spec), m_SemaphoreLock(MakeWriterSemaphoreName(spec)) {
+    : IWrapper(spec), m_SemLock(MakeSemName(spec)) {
     SetupSpdlog();
     EnsureSingleton();
 
@@ -32,17 +32,9 @@ Writer::Writer(const Spec& spec)
 }
 
 Writer::~Writer() {
-    if (!m_SemaphoreLock.Release()) {
+    if (!m_SemLock.Release()) {
         SPDLOG_ERROR("Failed to unlock writer semaphore \"{}\"",
-                     m_SemaphoreLock.Name());
-    }
-}
-
-void Writer::EnsureSingleton() {
-    if (!m_SemaphoreLock.Acquire()) {
-        throw std::logic_error(std::format(
-            "({}:{}) Another writer has locked the semaphore \"{}\"", __FILE__,
-            __LINE__, m_SemaphoreLock.Name()));
+                     m_SemLock.Name());
     }
 }
 
@@ -164,8 +156,16 @@ bool Writer::Write(BufferT writeBuffer) {
     return true;
 }
 
-std::string MakeWriterSemaphoreName(const Spec& spec) {
+std::string Writer::MakeSemName(const Spec& spec) {
     return spec.dataSharedMemoryName + "-writer";
+}
+
+void Writer::EnsureSingleton() {
+    if (!m_SemLock.Acquire()) {
+        throw std::logic_error(std::format(
+            "({}:{}) Another writer has locked the semaphore \"{}\"", __FILE__,
+            __LINE__, m_SemLock.Name()));
+    }
 }
 
 }  // namespace CircularBuffer

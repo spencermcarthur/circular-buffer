@@ -6,8 +6,8 @@
 #include <string>
 
 #include "Aliases.hpp"
-#include "Macros.hpp"
 #include "IWrapper.hpp"
+#include "Macros.hpp"
 #include "SemaphoreLock.hpp"
 #include "Spec.hpp"
 
@@ -26,15 +26,15 @@ public:
     // Compatibility interface
     bool Write(DataT* data, size_t size) { return Write({data, size}); }
 
+    static std::string MakeSemName(const Spec& spec);
+
 private:
     void EnsureSingleton();
 
     // Pointer to next write location
     IterT m_NextElement;
     // Semaphore lock to ensure only a single reader ever gets instantiated
-    SemaphoreLock m_SemaphoreLock;
+    SemaphoreLock m_SemLock;
 };
-
-std::string MakeWriterSemaphoreName(const Spec& spec);
 
 }  // namespace CircularBuffer
