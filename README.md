@@ -14,8 +14,9 @@
 - CMake
 
 ## External Dependencies
-- libgtest (unit tests only)
-- libbenchmark (benchmarks only)
+- libgtest (unit tests)
+- libasan (all tests)
+- libbenchmark (benchmarks)
 
 ## Building
 To build libcircularbuffer:
@@ -124,29 +125,68 @@ The reader performs the same wraparound checks as the writer, and reads the data
 
 ## Testing
 
-### Unit Tests
-`SemaphoreLock`
-1. Constructor
-2. Constructor failure cases
-    - Invalid name cases (too long/short)
-3. Acquire/release logic
-    - Multiple objects accessing the same semaphore
+All testing applications, including GTest units, are compiled with `-fsanitize=address` and are linked with libasan to detect memory leaks and invalid accesses.
 
-`SharedMemory`
+### Unit Tests
+
+#### `SemaphoreLock`
 1. Constructor
 2. Constructor failure cases
-    - Invalid name cases (too long/short)
-    - Invalid size requested (too large or 0)
-3. Construction of multiple objects
+    - Invalid name: blank or too long
+3. Acquire/release logic
+    - Multiple objects accessing the same semaphore, only one can lock at a time
+    - Automatic release of lock on destruction
+
+#### `SharedMemory`
+1. Constructor
+    - Request new memory
+    - Access/map new memory
+2. Shared memory is freed after last object destroyed/ref count drops to 0
+3. Constructor failure cases
+    - Invalid size requested: too large or 0
+    - Invalid size requested: named shared memory already exists, but is a different size than requested
+    - Invalid name: blank or too long
+4. Construction of multiple objects
     - Reference counter works
-    - Shared memory is freed after last object goes out of scope
+    - Memory is updated on all views when written to
+
+#### `Writer`
+1. Constructor
+    - Construct successfully
+    - Fail if another writer already exists on the same buffer
+2. Write
+    - Write a single message successfully
+    - Handle wraparound
+3. Failure cases
+    - Fail if the message passed is bigger than max allowed size
+
+#### `Reader`
+1. Constructor
+    - Construct successfully
+    - Can construct multiple readers
+2. Read
+    - Return 0 if no data to read
+    - Read a single message successfully
+    - Handle wraparound
+3. Failure cases
+    - Fail if read buffer is too small to fit next message
+
 
 ### Integration Tests
-`ReaderApp`, `WriterApp`, `ReaderWriterApp`
-- Run writer and reader in separate processes to demonstrate IPC integration
-- Reader can be run in "slow" mode to demonstrate overwrite detection: `./ReaderApp slow`
-- Writer can be run if "fase" mode to speed up demonstration of overwrite: `./WriterApp fast`
-- Running in Debug configuration displays log messages that are not present in Release, and also performs additional sanity checks in the `Reader` and `Writer` code to ensure the algorithms are operating as expected.
+
+#### `bin/ReaderApp`/`bin/WriterApp`
+- Run writer and reader apps in separate processes to demonstrate IPC integration
+- Reader optionally takes command-line arg `slow` to demonstrate overwrite detection
+- Writer optionally takes command-line arg `fast` to speed up overwrite detection demonstration
+- Buffer configuration controlled by file `bin/bufferconfig.txt` (run `cmake rebuild_cache` after changing to copy changes to build directory)
+    1. Line 1 is buffer state shared memory
+    2. Line 2 is buffer shared memory
+    3. Line 3 is requested buffer size in bytes
+- Running in Debug configuration displays log messages that are compiled out in the Release configuration. It also performs additional sanity checks in the `Reader` and `Writer` library code to ensure the algorithms are operating as expected.
+
+#### `bin/ReaderWriterApp`
+- Can run this app to run the reader and writer in separate threads of the same process
+- Optionally takes any combination/ordering of command-line args `slow`/`fast` for reader/writer respectively
 
 ## References
 1. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024 (YouTube)](https://www.youtube.com/watch?v=sX2nF1fW7kI)
