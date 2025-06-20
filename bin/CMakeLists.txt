@@ -7,15 +7,15 @@ else()
     link_libraries(circularbuffer)
 endif()
 
-add_executable(WriterDemo EXCLUDE_FROM_ALL Writer.cpp)
-add_executable(ReaderDemo EXCLUDE_FROM_ALL Reader.cpp)
+add_executable(WriterApp EXCLUDE_FROM_ALL Writer.cpp)
+add_executable(ReaderApp EXCLUDE_FROM_ALL Reader.cpp)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bufferconfig.txt 
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_custom_target(Demos
+add_custom_target(Apps
     DEPENDS
-        WriterDemo
-        ReaderDemo
+        WriterApp
+        ReaderApp
 )

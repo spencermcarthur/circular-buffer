@@ -4,7 +4,7 @@
 #include <csignal>
 #include <thread>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "Demo.hpp"
 #include "Generators.hpp"
 #include "circularbuffer/Writer.hpp"

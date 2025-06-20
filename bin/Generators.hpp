@@ -6,7 +6,7 @@
 #include <limits>
 #include <random>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 
 class WaitTimeGenerator {
     static constexpr uint64_t NANOS_PER_MILLI = 1'000'000;

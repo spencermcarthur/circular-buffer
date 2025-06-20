@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <thread>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "Demo.hpp"
 #include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/Reader.hpp"
