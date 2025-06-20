@@ -13,7 +13,7 @@
 // Class for managing Linux shared memory
 class SharedMemory {
     // Needed for putting the ref counter on its own cacheline
-    static constexpr size_t DATA_OFFSET_BYTES = __CACHELINE_SIZE_BYTES;
+    static constexpr size_t DATA_OFFSET_BYTES = _CACHELINE_SIZE_BYTES;
 
 public:
     // See "DESCRIPTION" at
@@ -21,7 +21,7 @@ public:
     static constexpr size_t MAX_NAME_LEN = NAME_MAX;
     // Arbitrary 500 MiB
     static constexpr size_t MAX_SIZE_BYTES =
-        __MAX_SHARED_MEM_SIZE_MIB * 1024 * 1024;
+        _MAX_SHARED_MEM_SIZE_MIB * 1024 * 1024;
 
     SharedMemory(std::string_view shMemName, size_t requestedSize);
     ~SharedMemory();
