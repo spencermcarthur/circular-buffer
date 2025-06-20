@@ -94,4 +94,4 @@ An interface class that owns `SharedMemory` objects that manage access to buffer
 - [ccpreference](https://cppreference.com/)
 
 ## Notes
-[^1]: Somewhat arbitrary, but benchmarks show that writing large messages into a large buffer is less performant than large messages into a smalle buffer, probably due to cache contention.
+[^1]: Somewhat arbitrary, but benchmarks show that writing large messages into a large buffer is less performant than large messages into a small buffer, probably due to cache contention.
