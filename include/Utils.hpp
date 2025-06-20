@@ -10,7 +10,7 @@ static void SetupSpdlog() noexcept {
         return;
     }
 
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%@] [%^%l%$] %v");
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%s:%#] [%^%l%$] %v");
 #if SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_DEBUG
     if (spdlog::get_level() != spdlog::level::debug) {
         spdlog::set_level(spdlog::level::debug);

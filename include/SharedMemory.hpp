@@ -13,7 +13,7 @@
 // Class for managing Linux shared memory
 class SharedMemory {
     // Needed for putting the ref counter on its own cacheline
-    static constexpr size_t DATA_OFFSET_BYTES = CACHELINE_SIZE_BYTES;
+    static constexpr size_t DATA_OFFSET_BYTES = __CACHELINE_SIZE_BYTES;
 
 public:
     // See "DESCRIPTION" at
@@ -21,7 +21,7 @@ public:
     static constexpr size_t MAX_NAME_LEN = NAME_MAX;
     // Arbitrary 500 MiB
     static constexpr size_t MAX_SIZE_BYTES =
-        MAX_SHARED_MEM_SIZE_MIB * 1024 * 1024;
+        __MAX_SHARED_MEM_SIZE_MIB * 1024 * 1024;
 
     SharedMemory(std::string_view shMemName, size_t requestedSize);
     ~SharedMemory();
@@ -65,18 +65,18 @@ public:
 private:
     // Open a shared memory location using shm_open. Returns false if shared
     // memory does not exist
-    bool OpenSharedMem();
+    bool OpenSharedMemFile(std::string_view name);
     // Close shared memory file without unlinking
-    void CloseSharedMem() noexcept;
+    void CloseSharedMemFile() noexcept;
 
     // Create a shared memory location if it doesn't exist using shm_open
-    void LinkSharedMem();
+    void AllocSharedMem(std::string_view name);
     // Unlink a shared memory location using shm_unlink
-    void UnlinkSharedMem() noexcept;
+    void FreeSharedMem() noexcept;
 
     // Map shared memory to our process's virtual memory and link our pointers
     // to the correct locations in the shared memory region
-    void MapSharedMem();
+    void MapSharedMem(std::string_view name = {});
     // Unmap shared memory from our process's virtual memory and unlink our
     // pointers
     void UnmapSharedMem() noexcept;

@@ -14,7 +14,7 @@ class SemaphoreLock {
 public:
     // See "DESCRIPTION/Named semaphores" at
     // https://man7.org/linux/man-pages/man7/sem_overview.7.html
-    static constexpr size_t MAX_SEM_NAME_LEN = NAME_MAX - 4;
+    static constexpr size_t MAX_SEMAPHORE_NAME_LEN = NAME_MAX - 4;
 
     explicit SemaphoreLock(std::string_view name);
     ~SemaphoreLock();

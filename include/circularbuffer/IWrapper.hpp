@@ -10,12 +10,6 @@ namespace CircularBuffer {
 
 class IWrapper {
 public:
-    static constexpr size_t HEADER_SIZE_BYTES = sizeof(MessageSizeT);
-    // Buffer should be able to hold at least 2 max-length messages without
-    // overwriting
-    static constexpr size_t MIN_BUFFER_SIZE_BYTES =
-        2 * (HEADER_SIZE_BYTES + MAX_MESSAGE_SIZE);
-
     // No default/copy/move construction
     EXPLICIT_DELETE_CONSTRUCTORS(IWrapper);
 
