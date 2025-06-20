@@ -7,7 +7,7 @@
 
 #include "Common.hpp"
 #include "Generators.hpp"
-#include "Macros.hpp"
+#include "circularbuffer/Macros.hpp"
 #include "circularbuffer/Writer.hpp"
 
 class WriterApp {
@@ -25,7 +25,7 @@ public:
           m_WaitTimeGen(m_IsFast ? FAST_ARRIVAL_TIME_MILLIS
                                  : NORMAL_ARRIVAL_TIME_MILLIS) {}
 
-    EXPLICIT_DELETE_CONSTRUCTORS(WriterApp);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(WriterApp);
 
     void Run() {
         m_Running = true;

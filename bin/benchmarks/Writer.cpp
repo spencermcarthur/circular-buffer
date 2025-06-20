@@ -4,8 +4,8 @@
 
 #include <cstring>
 
-#include "SharedMemory.hpp"
 #include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/SharedMemory.hpp"
 #include "circularbuffer/Spec.hpp"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"

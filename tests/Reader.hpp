@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-#include "SharedMemory.hpp"
+#include "circularbuffer/SharedMemory.hpp"
 #include "circularbuffer/Spec.hpp"
 #include "circularbuffer/State.hpp"
 #include "circularbuffer/Writer.hpp"

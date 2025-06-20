@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <string_view>
 
-#include "Macros.hpp"
+#include "circularbuffer/Macros.hpp"
 
 // Semaphore lock class
 class SemaphoreLock {
@@ -19,7 +19,7 @@ public:
     explicit SemaphoreLock(std::string_view name);
     ~SemaphoreLock();
 
-    EXPLICIT_DELETE_CONSTRUCTORS(SemaphoreLock);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(SemaphoreLock);
 
     bool Acquire() noexcept;
     bool Acquire(int &err) noexcept;

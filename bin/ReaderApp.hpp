@@ -7,8 +7,8 @@
 #include <thread>
 
 #include "Common.hpp"
-#include "Macros.hpp"
 #include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/Macros.hpp"
 #include "circularbuffer/Reader.hpp"
 
 class ReaderApp {
@@ -25,7 +25,7 @@ public:
           m_ProcessingDelayMics(m_IsSlow ? SLOW_READER_DELAY
                                          : NORMAL_READER_DELAY) {}
 
-    EXPLICIT_DELETE_CONSTRUCTORS(ReaderApp);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(ReaderApp);
 
     void Run() {
         CircularBuffer::BufferT readBuffer(m_BufferData, BUFSZ);

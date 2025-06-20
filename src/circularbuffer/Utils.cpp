@@ -1,9 +1,9 @@
-#pragma once
+#include "circularbuffer/Utils.hpp"
 
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
-static void SetupSpdlog() noexcept {
+void SetupSpdlog() noexcept {
     // Latch
     static bool setupDone{false};
     if (setupDone) {

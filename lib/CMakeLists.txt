@@ -1,11 +1,9 @@
 # Main library
+file(GLOB CB_SRC ${CMAKE_SOURCE_DIR}/src/circularbuffer/*.cpp)
 file(GLOB SPDLOG_SRC ${CMAKE_SOURCE_DIR}/src/spdlog/*.cpp)
-add_library(circularbuffer SHARED
-    ${CMAKE_SOURCE_DIR}/src/SemaphoreLock.cpp
-    ${CMAKE_SOURCE_DIR}/src/SharedMemory.cpp
-    ${CMAKE_SOURCE_DIR}/src/circularbuffer/IWrapper.cpp
-    ${CMAKE_SOURCE_DIR}/src/circularbuffer/Writer.cpp
-    ${CMAKE_SOURCE_DIR}/src/circularbuffer/Reader.cpp
-    ${SPDLOG_SRC}
-)
+
+add_library(circularbuffer SHARED ${CB_SRC} ${SPDLOG_SRC})
+
 target_include_directories(circularbuffer PUBLIC ${CMAKE_SOURCE_DIR}/include)
+file(GLOB CB_HEADERS ${CMAKE_SOURCE_DIR}/include/**.hpp)
+set_target_properties(circularbuffer PROPERTIES PUBLIC_HEADER "${CB_HEADERS}")

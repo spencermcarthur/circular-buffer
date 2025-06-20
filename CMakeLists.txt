@@ -49,9 +49,9 @@ endif()
 
 # Definitions
 add_compile_definitions(
-    _MAX_SHARED_MEM_SIZE_MIB=${MAX_SHARED_MEM_SIZE_MIB}
-    _MAX_MESSAGE_SIZE_BYTES=${MAX_MESSAGE_SIZE_BYTES}
-    _CACHELINE_SIZE_BYTES=${CACHELINE_SIZE_BYTES}
+    CB_MAX_SHARED_MEM_SIZE_MIB=${MAX_SHARED_MEM_SIZE_MIB}
+    CB_MAX_MESSAGE_SIZE_BYTES=${MAX_MESSAGE_SIZE_BYTES}
+    CB_CACHELINE_SIZE_BYTES=${CACHELINE_SIZE_BYTES}
     SPDLOG_COMPILED_LIB=1  # Compile as shared library
     SPDLOG_USE_STD_FORMAT=1  # Use <format> header instead of libfmt
 )
@@ -76,3 +76,8 @@ endif()
 add_subdirectory(bin)
 add_subdirectory(lib)
 add_subdirectory(tests)
+
+
+# Install
+install(TARGETS circularbuffer)
+install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN include/spdlog EXCLUDE)

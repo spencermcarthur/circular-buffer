@@ -2,10 +2,10 @@
 
 #include <cstddef>
 
-#include "Aliases.hpp"
-#include "IWrapper.hpp"
-#include "Macros.hpp"
-#include "Spec.hpp"
+#include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/IWrapper.hpp"
+#include "circularbuffer/Macros.hpp"
+#include "circularbuffer/Spec.hpp"
 
 namespace CircularBuffer {
 
@@ -14,7 +14,7 @@ public:
     explicit Reader(const Spec &spec);
 
     // No default/copy/move construction
-    EXPLICIT_DELETE_CONSTRUCTORS(Reader);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(Reader);
 
     // Returns positive int if buffer read-from successfully, or 0 if there is
     // no data to read. Returns -1 if the read buffer is too small. Returns

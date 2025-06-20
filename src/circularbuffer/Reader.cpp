@@ -1,17 +1,15 @@
 #include "circularbuffer/Reader.hpp"
 
 #include <atomic>
-#ifdef DEBUG
 #include <cassert>
-#endif
 #include <climits>
 #include <cstddef>
 #include <cstring>
 
-#include "Utils.hpp"
 #include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/IWrapper.hpp"
 #include "circularbuffer/Spec.hpp"
+#include "circularbuffer/Utils.hpp"
 #include "spdlog/spdlog.h"
 
 namespace CircularBuffer {

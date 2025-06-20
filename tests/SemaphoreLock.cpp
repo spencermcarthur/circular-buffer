@@ -1,4 +1,4 @@
-#include "SemaphoreLock.hpp"
+#include "circularbuffer/SemaphoreLock.hpp"
 
 #include <gtest/gtest.h>
 #include <linux/limits.h>

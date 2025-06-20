@@ -6,8 +6,8 @@
 #include <limits>
 #include <random>
 
-#include "Macros.hpp"
 #include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/Macros.hpp"
 
 using MsgSize = CircularBuffer::MessageSizeT;
 
@@ -45,7 +45,7 @@ public:
                        .count());
     }
 
-    EXPLICIT_DELETE_COPY_MOVE(MessageSizeGenerator);
+    CB_EXPLICIT_DELETE_COPY_MOVE(MessageSizeGenerator);
     MsgSize operator()() { return Clip(m_Dist(m_Rng)); }
 
 private:
@@ -89,7 +89,7 @@ public:
 
     ~RandomMessage() { delete[] m_Data; }
 
-    EXPLICIT_DELETE_CONSTRUCTORS(RandomMessage);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(RandomMessage);
 
     [[nodiscard]] data_t* data() const { return m_Data; }
     [[nodiscard]] MsgSize size() const { return m_Size; }

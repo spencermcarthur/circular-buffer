@@ -1,4 +1,4 @@
-#include "SemaphoreLock.hpp"
+#include "circularbuffer/SemaphoreLock.hpp"
 
 #include <fcntl.h>
 #include <semaphore.h>
@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "Macros.hpp"
-#include "Utils.hpp"
+#include "circularbuffer/Macros.hpp"
+#include "circularbuffer/Utils.hpp"
 #include "spdlog/spdlog.h"
 
 static constexpr int OPEN_READ_WRITE = S_IRUSR + S_IWUSR;
@@ -22,7 +22,7 @@ SemaphoreLock::SemaphoreLock(const std::string_view name) {
 
     // Validate name
     if (name.empty() || name.length() > MAX_SEMAPHORE_NAME_LEN) {
-        CONSTEXPR_SV fmt =
+        CB_CONSTEXPR_SV fmt =
             "({}:{}) Semaphore name \"{}\" of length {} is invalid: length "
             "must >0 and <={}";
         SPDLOG_ERROR(fmt.substr(8), name, name.length(),
@@ -48,7 +48,7 @@ SemaphoreLock::SemaphoreLock(const std::string_view name) {
         if (sem == SEM_FAILED) {
             // Failed again
             const int err = errno;
-            CONSTEXPR_SV fmt = "({}:{}) Can't access semaphore {}: {}";
+            CB_CONSTEXPR_SV fmt = "({}:{}) Can't access semaphore {}: {}";
             SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
             throw std::runtime_error(
                 std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));

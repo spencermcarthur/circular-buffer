@@ -1,4 +1,4 @@
-#include "SharedMemory.hpp"
+#include "circularbuffer/SharedMemory.hpp"
 
 #include <gtest/gtest.h>
 #include <linux/limits.h>

@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "Aliases.hpp"
+#include "circularbuffer/Aliases.hpp"
 
 namespace CircularBuffer {
 

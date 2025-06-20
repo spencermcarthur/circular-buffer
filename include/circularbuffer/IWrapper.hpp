@@ -1,17 +1,17 @@
 #pragma once
 
-#include "Aliases.hpp"
-#include "Macros.hpp"
-#include "SharedMemory.hpp"
-#include "Spec.hpp"
-#include "State.hpp"
+#include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/Macros.hpp"
+#include "circularbuffer/SharedMemory.hpp"
+#include "circularbuffer/Spec.hpp"
+#include "circularbuffer/State.hpp"
 
 namespace CircularBuffer {
 
 class IWrapper {
 public:
     // No default/copy/move construction
-    EXPLICIT_DELETE_CONSTRUCTORS(IWrapper);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(IWrapper);
 
 protected:
     // Prevent instantiation

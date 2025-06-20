@@ -5,11 +5,11 @@
 #include <cstddef>
 #include <string>
 
-#include "Aliases.hpp"
-#include "IWrapper.hpp"
-#include "Macros.hpp"
-#include "SemaphoreLock.hpp"
-#include "Spec.hpp"
+#include "circularbuffer/Aliases.hpp"
+#include "circularbuffer/IWrapper.hpp"
+#include "circularbuffer/Macros.hpp"
+#include "circularbuffer/SemaphoreLock.hpp"
+#include "circularbuffer/Spec.hpp"
 
 namespace CircularBuffer {
 
@@ -19,7 +19,7 @@ public:
     ~Writer() override;
 
     // No default/copy/move construction
-    EXPLICIT_DELETE_CONSTRUCTORS(Writer);
+    CB_EXPLICIT_DELETE_CONSTRUCTORS(Writer);
 
     // Writes data to buffer in shared memory
     bool Write(BufferT writeBuffer);

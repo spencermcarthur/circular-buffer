@@ -1,18 +1,16 @@
 #include "circularbuffer/Writer.hpp"
 
 #include <atomic>
-#ifdef DEBUG
 #include <cassert>
-#endif
 #include <cstring>
 #include <format>
 #include <stdexcept>
 
-#include "SemaphoreLock.hpp"
-#include "Utils.hpp"
 #include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/IWrapper.hpp"
+#include "circularbuffer/SemaphoreLock.hpp"
 #include "circularbuffer/Spec.hpp"
+#include "circularbuffer/Utils.hpp"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
