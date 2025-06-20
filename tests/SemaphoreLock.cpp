@@ -13,7 +13,7 @@ TEST(SemaphoreLock, Constructor) {
     EXPECT_NO_THROW(SemaphoreLock{g_ValidName});
 }
 
-TEST(SemaphoreLock, ConstructorFailIfNameTooShort) {
+TEST(SemaphoreLock, ConstructorFailIfNameBlank) {
     // Invalid name - 0 length
     EXPECT_THROW(SemaphoreLock{""}, std::length_error);
 }
@@ -27,33 +27,34 @@ TEST(SemaphoreLock, ConstructorFailIfNameTooLong) {
 
 TEST(SemaphoreLock, AcquireRelease) {
     // Construct 2 semaphore locks on /testing
-    SemaphoreLock sl1(g_ValidName);
-    SemaphoreLock sl2(g_ValidName);
+    SemaphoreLock lock1(g_ValidName);
+    SemaphoreLock lock2(g_ValidName);
 
     // sl1 locks, sl2 can't
-    EXPECT_TRUE(sl1.Acquire());
-    EXPECT_FALSE(sl2.Acquire());
+    EXPECT_TRUE(lock1.Acquire());
+    EXPECT_FALSE(lock2.Acquire());
 
     // sl1 unlocks, 2 can lock and unlock
-    EXPECT_TRUE(sl1.Release());
-    EXPECT_TRUE(sl2.Acquire());
-    EXPECT_TRUE(sl2.Release());
+    EXPECT_TRUE(lock1.Release());
+    EXPECT_TRUE(lock2.Acquire());
+    EXPECT_TRUE(lock2.Release());
 }
 
 TEST(SemaphoreLock, DestructorRelease) {
     // Construct and test
-    SemaphoreLock sl1(g_ValidName);
-    EXPECT_TRUE(sl1.Acquire());
-    EXPECT_TRUE(sl1.Release());
+    SemaphoreLock lock1(g_ValidName);
+    EXPECT_TRUE(lock1.Acquire());
+    EXPECT_TRUE(lock1.Release());
 
     {
         // Construct another lock and acquire before destroying. Expected when
         // locked is to unlock on destruction.
-        SemaphoreLock sl2(g_ValidName);
-        EXPECT_TRUE(sl2.Acquire());
+        SemaphoreLock lock2(g_ValidName);
+        EXPECT_TRUE(lock2.Acquire());
+        EXPECT_FALSE(lock1.Acquire());
     }
 
     // First lock should be able to acquire
-    EXPECT_TRUE(sl1.Acquire());
-    EXPECT_TRUE(sl1.Release());
+    EXPECT_TRUE(lock1.Acquire());
+    EXPECT_TRUE(lock1.Release());
 }
