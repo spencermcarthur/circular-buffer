@@ -184,7 +184,7 @@ All testing applications, including GTest units, are compiled with `-fsanitize=a
     2. Line 2 is buffer shared memory
     3. Line 3 is requested buffer size in bytes
 - Running in Debug configuration displays log messages that are compiled out in the Release configuration. It also performs additional sanity checks in the `Reader` and `Writer` library code to ensure the algorithms are operating as expected.
-- <u>**Suggested demonstration**</u>: in Debug, run one reader in slow mode, one reader noramlly, and the writer in fast mode in separate terminals. The slow reader will quickly detect an overwrite, but the normal reader will keep up well with the writer.
+- **_Suggested demonstration_**: in Debug, run one reader in slow mode, one reader noramlly, and the writer in fast mode in separate terminals. The slow reader will quickly detect an overwrite, but the normal reader will keep up well with the writer.
 
 #### `bin/ReaderWriterApp`
 - Can run this app to run the reader and writer in separate threads of the same process
