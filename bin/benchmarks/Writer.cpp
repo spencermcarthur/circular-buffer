@@ -32,6 +32,7 @@ void BM_Write(benchmark::State& state) {
         writer.Write(writeBuffer);
     }
     state.SetItemsProcessed(state.iterations());
+    state.SetBytesProcessed(state.iterations() * writeBuffer.size_bytes());
 
     // Free buffer data
     delete[] msgData;
