@@ -43,6 +43,8 @@ int Reader::Read(BufferT readBuffer) {
     if (msgSize == 0) {
         m_LocalIndex = 0;
         std::memcpy(&msgSize, &m_Buffer[m_LocalIndex], HEADER_SIZE);
+
+        SPDLOG_DEBUG("Detected wraparound");
     }
 
     // Cache global write index before copy

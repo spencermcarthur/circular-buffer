@@ -30,7 +30,7 @@ SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
     // Validate args
     if (nameLen < 1 || nameLen > MAX_NAME_LEN) {
         CONSTEXPR_SV fmt =
-            "({}:{}) Memory region name \"{}\" of length {} is invalid: length "
+            "({}:{}) Memory region name {} of length {} is invalid: length "
             "must be 0 < len <= {}";
         SPDLOG_ERROR(fmt.substr(8), name, nameLen, MAX_NAME_LEN);
         throw std::length_error(
@@ -45,29 +45,29 @@ SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
                                             requestedSize, MAX_SIZE_BYTES));
     }
 
-    // Copy name
-    m_Name = new char[nameLen + 1]{};
-    std::strncpy(m_Name, name.data(), nameLen);
-
     // If we can't open shared memory at m_Name
-    if (!OpenSharedMem()) {
+    if (!OpenSharedMemFile(name)) {
         // Try to create it
-        LinkSharedMem();
+        AllocSharedMem(name);
 
         // If we succeeded in creating it (i.e. didn't crash) but still can't
         // open it, then fail
-        if (!OpenSharedMem()) {
+        if (!OpenSharedMemFile(name)) {
             const int err = errno;
             CONSTEXPR_SV fmt =
                 "({}:{}) Failed to open shared memory for {}: {}";
-            SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
+            SPDLOG_ERROR(fmt.substr(8), name, strerror(err));
             throw std::runtime_error(
-                std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
+                std::format(fmt, __FILE__, __LINE__, name, strerror(err)));
         }
     }
 
     // Map the data to our virtual memory
-    MapSharedMem();
+    MapSharedMem(name);
+
+    // Copy name
+    m_Name = new char[nameLen + 1]{};
+    std::strncpy(m_Name, name.data(), nameLen);
 
     // Increment ref counter
     const std::atomic_ref<int> refCounter(*m_RefCounter);
@@ -88,12 +88,12 @@ SharedMemory::~SharedMemory() {
 
         // If ref count is 0, schedule free
         if (refCount == 0) {
-            UnlinkSharedMem();
+            FreeSharedMem();
         }
     }
 
     // Close file handle
-    CloseSharedMem();
+    CloseSharedMemFile();
 
     delete[] m_Name;
 }
@@ -107,11 +107,18 @@ int SharedMemory::ReferenceCount() const {
     return refCount;
 }
 
-bool SharedMemory::OpenSharedMem() {
+bool SharedMemory::OpenSharedMemFile(std::string_view name) {
     // Try to open shared memory file
-    const int fileDesc = shm_open(m_Name, O_RDWR, S_IRUSR + S_IWUSR);
+    const int fileDesc = shm_open(name.data(), O_RDWR, S_IRUSR + S_IWUSR);
     if (fileDesc == -1) {
         // Failed
+
+#ifdef DEBUG
+        const int err = errno;
+        SPDLOG_DEBUG("Failed to open shared memory file {}: {}", name,
+                     strerror(err));
+#endif
+
         return false;
     }
 
@@ -120,40 +127,43 @@ bool SharedMemory::OpenSharedMem() {
     if (fstat(fileDesc, &buf) == -1) {
         // Failed
         const int err = errno;
-        CONSTEXPR_SV fmt = "({}:{}) fstat failed for shared memory \"{}\": {}";
-        SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
+        CONSTEXPR_SV fmt = "({}:{}) fstat failed for shared memory file {}: {}";
+        SPDLOG_ERROR(fmt.substr(8), name, strerror(err));
         throw std::runtime_error(
-            std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
+            std::format(fmt, __FILE__, __LINE__, name, strerror(err)));
     }
 
     // Check that existing shared memory's size is what's expected
     if (static_cast<size_t>(buf.st_size) != m_TotalSize) {
         CONSTEXPR_SV fmt =
             "({}:{}) Requested shared memory size {} does not match existing "
-            "shared memory size {} for name \"{}\"";
-        SPDLOG_ERROR(fmt.substr(8), buf.st_size, m_DataSize, m_Name);
+            "shared memory size {} for {}";
+        SPDLOG_ERROR(fmt.substr(8), buf.st_size, m_DataSize, name);
         throw std::runtime_error(std::format(fmt, __FILE__, __LINE__,
-                                             buf.st_size, m_DataSize, m_Name));
+                                             buf.st_size, m_DataSize, name));
     }
 
-    m_FileDes = fileDesc;
+    SPDLOG_DEBUG("Opened shared memory {}", name);
 
+    m_FileDes = fileDesc;
     return true;
 }
 
-void SharedMemory::CloseSharedMem() noexcept {
+void SharedMemory::CloseSharedMemFile() noexcept {
     if (close(m_FileDes) == -1) {
         // Failed
         const int err = errno;
-        SPDLOG_ERROR("Failed to close shared memory file descriptor: {}",
-                     strerror(err));
+        SPDLOG_ERROR("Failed to close shared memory file descriptor for {}: {}",
+                     m_Name, strerror(err));
         return;
     }
+
+    SPDLOG_DEBUG("Closed shared memory file descriptor for {}", m_Name);
 
     m_FileDes = -1;
 }
 
-void SharedMemory::LinkSharedMem() {
+void SharedMemory::AllocSharedMem(std::string_view name) {
     // Try to lock semaphore
     if (!m_SemaphoreLock.Acquire()) {
         return;
@@ -161,15 +171,15 @@ void SharedMemory::LinkSharedMem() {
 
     // Create new shared memory in system
     const int fileDesc =
-        shm_open(m_Name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
+        shm_open(name.data(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR + S_IWUSR);
     if (fileDesc == -1) {
         // Failed
         const int err = errno;
         CONSTEXPR_SV fmt =
-            "({}:{}) Failed to create shared memory entry for name \"{}\": {}";
-        SPDLOG_ERROR(fmt.substr(7), m_Name, strerror(err));
+            "({}:{}) Failed to create shared memory entry for name {}: {}";
+        SPDLOG_ERROR(fmt.substr(7), name, strerror(err));
         throw std::runtime_error(
-            std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
+            std::format(fmt, __FILE__, __LINE__, name, strerror(err)));
     }
 
     // Allocate m_Size bytes
@@ -178,15 +188,17 @@ void SharedMemory::LinkSharedMem() {
         const int err = errno;
         CONSTEXPR_SV fmt =
             "({}:{}) failed to allocate shared memory for name {}: {}";
-        SPDLOG_ERROR(fmt.substr(8), m_Name, strerror(err));
+        SPDLOG_ERROR(fmt.substr(8), name, strerror(err));
         throw std::runtime_error(
-            std::format(fmt, __FILE__, __LINE__, m_Name, strerror(err)));
+            std::format(fmt, __FILE__, __LINE__, name, strerror(err)));
     }
+
+    SPDLOG_DEBUG("Allocated shared memory {} of size {}", name, m_DataSize);
 
     m_SemaphoreLock.Release();
 }
 
-void SharedMemory::UnlinkSharedMem() noexcept {
+void SharedMemory::FreeSharedMem() noexcept {
     // Try to lock semaphore before unlinking
     if (!m_SemaphoreLock.Acquire()) {
         return;
@@ -195,15 +207,20 @@ void SharedMemory::UnlinkSharedMem() noexcept {
     if (shm_unlink(m_Name) == -1) {
         // Failed
         const int err = errno;
-        SPDLOG_ERROR("Failed to unlink shared memory {}: {}", m_Name,
+        SPDLOG_ERROR("Failed to free shared memory {}: {}", m_Name,
                      strerror(err));
         return;
     }
 
+    SPDLOG_DEBUG("Freed shared memory {}", m_Name);
+
     m_SemaphoreLock.Release();
 }
 
-void SharedMemory::MapSharedMem() {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void SharedMemory::MapSharedMem(std::string_view name) {
+#pragma GCC diagnostic pop
     // Map shared memory to our process's virtual memory
     void *data = mmap(nullptr, m_TotalSize, PROT_READ | PROT_WRITE, MAP_SHARED,
                       m_FileDes, 0);
@@ -216,6 +233,8 @@ void SharedMemory::MapSharedMem() {
             std::format(fmt, __FILE__, __LINE__, strerror(err)));
     }
 
+    SPDLOG_DEBUG("Mapped shared memory {}", name);
+
     m_RefCounter = reinterpret_cast<int *>(data);
     m_Data = reinterpret_cast<void *>(m_RefCounter + DATA_OFFSET_BYTES);
 }
@@ -227,6 +246,8 @@ void SharedMemory::UnmapSharedMem() noexcept {
         SPDLOG_ERROR("Failed to unmap shared memory: {}", strerror(err));
         return;
     }
+
+    SPDLOG_DEBUG("Unmapped shared memory {}", m_Name);
 
     m_RefCounter = nullptr;
     m_Data = nullptr;

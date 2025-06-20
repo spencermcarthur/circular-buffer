@@ -16,15 +16,6 @@ namespace CircularBuffer {
 IWrapper::IWrapper(const Spec &spec) {
     SetupSpdlog();
 
-    // Validate requested buffer size
-    if (spec.bufferCapacity < MIN_BUFFER_SIZE_BYTES) {
-        CONSTEXPR_SV fmt = "({}:{}) Buffer size {} is too small: minimum is {}";
-        SPDLOG_ERROR(fmt.substr(8), spec.bufferCapacity, MIN_BUFFER_SIZE_BYTES);
-        throw std::domain_error(std::format(fmt, __FILE__, __LINE__,
-                                            spec.bufferCapacity,
-                                            MIN_BUFFER_SIZE_BYTES));
-    }
-
     // Load/map shared memory regions
     m_StateRegion = new SharedMemory(spec.indexSharedMemoryName, sizeof(State));
     m_DataRegion =

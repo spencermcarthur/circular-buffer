@@ -52,18 +52,18 @@ bool Writer::Write(BufferT writeBuffer) {
     }
 
     const MessageSizeT msgSize = writeBuffer.size_bytes();
-    const size_t totalBytesToWrite = HEADER_SIZE_BYTES + msgSize;
+    const size_t totalBytesToWrite = HEADER_SIZE + msgSize;
 
     /* Handle wraparound
      * If what we need to write is bigger than the remaining
      * space to the end of the buffer, then we want to start writing back at the
      * beginning of the buffer. Want to avoid writing logic to wrap messages
      * around from end to beginning. */
-    if (totalBytesToWrite > m_Buffer.size_bytes() - m_LocalIndex) [[unlikely]] {
+    if (totalBytesToWrite > m_Buffer.size_bytes() - m_LocalIndex) {
         /* Zero out the next message size
          * This signals to readers that they should start reading back at the
          * beginning of the buffer for the next message. */
-        std::memset(m_NextElement.base(), '\0', HEADER_SIZE_BYTES);
+        std::memset(m_NextElement.base(), '\0', HEADER_SIZE);
         m_LocalIndex = 0;
         m_NextElement = m_Buffer.begin();
 
@@ -75,10 +75,10 @@ bool Writer::Write(BufferT writeBuffer) {
     m_State->writeIdx.store(m_LocalIndex, std::memory_order_release);
 
     // Write message size to buffer
-    std::memcpy(m_NextElement.base(), &msgSize, HEADER_SIZE_BYTES);
+    std::memcpy(m_NextElement.base(), &msgSize, HEADER_SIZE);
 
     // Write message to buffer
-    std::memcpy(m_NextElement.base() + HEADER_SIZE_BYTES, writeBuffer.data(),
+    std::memcpy(m_NextElement.base() + HEADER_SIZE, writeBuffer.data(),
                 msgSize);
 
     // Advance read index - indicates write complete
