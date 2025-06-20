@@ -1,7 +1,11 @@
 #include "circularbuffer/Reader.hpp"
 
 #include <atomic>
+#ifdef DEBUG
+#include <cassert>
+#endif
 #include <climits>
+#include <cstddef>
 #include <cstring>
 
 #include "Utils.hpp"
@@ -15,73 +19,136 @@ namespace CircularBuffer {
 Reader::Reader(const Spec& spec) : IWrapper(spec) { SetupSpdlog(); }
 
 int Reader::Read(BufferT readBuffer) {
-    static bool overwritten{false};
+    static_assert(HEADER_SIZE <= sizeof(int));
 
-    // Don't read any more if we've already been overwritten
-    if (overwritten) {
-        return INT_MIN;
-    }
-
-    // If there's nothing to read, return
+    // Check if there's data to read
     if (m_LocalIndex == m_State->readIdx.load(std::memory_order_acquire)) {
+        // Nothing to read
         return 0;
     }
 
-    // Copy message size
-    MessageSizeT msgSize;
-    std::memcpy(&msgSize, &m_Buffer[m_LocalIndex], HEADER_SIZE);
-
-    // Buffer not big enough
-    if (msgSize > readBuffer.size_bytes()) {
-        SPDLOG_ERROR("Read buffer too small: {} B vs message size of {} B",
-                     readBuffer.size_bytes(), msgSize);
-        return -1;
-    }
-
-    // Check for wraparound. If writer zeroed current header and moved read
-    // pointer, then we know it "overflowed" to the beginning.
-    if (msgSize == 0) {
-        m_LocalIndex = 0;
-        std::memcpy(&msgSize, &m_Buffer[m_LocalIndex], HEADER_SIZE);
-
-        SPDLOG_DEBUG("Detected wraparound");
-    }
-
-    // Cache global write index before copy
-    const IndexT writeIdxBefore =
-        m_State->writeIdx.load(std::memory_order_acquire);
-
-    // Copy message into read buffer
-    std::memcpy(readBuffer.data(), &m_Buffer[m_LocalIndex + HEADER_SIZE],
-                msgSize);
-
-    // Load write index after copy
-    const IndexT writeIdxAfter =
-        m_State->writeIdx.load(std::memory_order_acquire);
-
-    // Overwrite detection
-    /* Normal overwrite:
-     * If we started ahead of the global write index and ended up behind it,
-     * then we got overwritten */
-    overwritten =
-        overwritten || ((m_LocalIndex > writeIdxBefore)      // ahead before
-                        && (m_LocalIndex < writeIdxAfter));  // behind after
-
-    /* Wraparound overwrite:
-     * If we started behind the write index and are still behind the write
-     * index, but it is now behind where it was before we copied, then it
-     * wrapped around and overwrote us. */
-    overwritten = overwritten ||
-                  ((m_LocalIndex < writeIdxAfter)         // behind before
-                   && (writeIdxAfter < writeIdxBefore));  // moved "backwards"
-
-    if (overwritten) {
-        SPDLOG_CRITICAL("Got overwritten");
+    // Overwrite detection: How far behind in sequence number are we?
+    SeqNumT lag =
+        m_State->seqNum.load(std::memory_order_acquire) - m_LocalSeqNum;
+    if (lag > m_CircularBuffer.size_bytes()) [[unlikely]] {
+        // Overwritten
+        SPDLOG_CRITICAL("Overwrite detected: writer is {} bytes ahead of me",
+                        lag);
         return INT_MIN;
     }
 
-    // Advance index and data pointer
-    m_LocalIndex += HEADER_SIZE + msgSize;
+    // Space to end of buffer
+    const int spaceToEnd = m_CircularBuffer.size_bytes() - m_LocalIndex;
+
+    MessageSizeT msgSize;
+
+    // Header can fit
+    if (spaceToEnd >= HEADER_SIZE) [[likely]] {
+        // Read message size
+        std::memcpy(&msgSize, &m_CircularBuffer[m_LocalIndex], HEADER_SIZE);
+
+#ifdef DEBUG
+        // Track bytes read/remaining as we read
+        int totalBytesRead = HEADER_SIZE;
+        int remainingBytes = msgSize;
+#endif
+
+        // Check read buffer is big enough
+        if (static_cast<size_t>(msgSize) > readBuffer.size_bytes())
+            [[unlikely]] {
+            SPDLOG_ERROR("Read buffer too small: {} B vs message size of {} B",
+                         readBuffer.size_bytes(), msgSize);
+            return -1;
+        }
+
+        // Compute total bytes we need to read
+        const int totalBytesToRead = HEADER_SIZE + msgSize;
+
+        // Message fits - can read like normal
+        if (totalBytesToRead <= spaceToEnd) [[likely]] {
+            // Read buffer data and shift pointer
+            std::memcpy(readBuffer.data(),
+                        &m_CircularBuffer[m_LocalIndex + HEADER_SIZE], msgSize);
+            m_LocalIndex += totalBytesToRead;
+
+#ifdef DEBUG
+            totalBytesRead += msgSize;
+            remainingBytes -= msgSize;
+#endif
+        }
+        // Message wraps - need to split read
+        else {
+            int msgBytesRead = 0;
+
+            // Read first part and shift pointer to beginning of buffer
+            std::memcpy(readBuffer.data(),
+                        &m_CircularBuffer[m_LocalIndex + HEADER_SIZE],
+                        spaceToEnd - HEADER_SIZE);
+            m_LocalIndex = 0;
+            msgBytesRead += (spaceToEnd - HEADER_SIZE);
+
+#ifdef DEBUG
+            totalBytesRead += (spaceToEnd - HEADER_SIZE);
+            remainingBytes -= (spaceToEnd - HEADER_SIZE);
+#endif
+
+            // Read second part and shift pointer again
+            const int bytesLeft = totalBytesToRead - spaceToEnd;
+            std::memcpy(readBuffer.data() + msgBytesRead,
+                        &m_CircularBuffer[m_LocalIndex], bytesLeft);
+            m_LocalIndex += bytesLeft;
+
+#ifdef DEBUG
+            totalBytesRead += bytesLeft;
+            remainingBytes -= bytesLeft;
+#endif
+
+            SPDLOG_DEBUG("Detected wraparound - split read");
+        }
+
+        m_LocalSeqNum += totalBytesToRead;
+
+#ifdef DEBUG
+        assert(totalBytesRead == totalBytesToRead);
+        assert(remainingBytes == 0);
+#endif
+    }
+    // Header can't fit - writer will have wrapped around
+    else {
+        // Wrap around to start of buffer
+        m_LocalIndex = 0;
+
+        // Read message size
+        std::memcpy(&msgSize, &m_CircularBuffer[m_LocalIndex], HEADER_SIZE);
+
+        // Check read buffer is big enough
+        if (static_cast<size_t>(msgSize) > readBuffer.size_bytes())
+            [[unlikely]] {
+            SPDLOG_ERROR("Read buffer too small: {} B vs message size of {} B",
+                         readBuffer.size_bytes(), msgSize);
+            return -1;
+        }
+
+        // Read message
+        std::memcpy(readBuffer.data(),
+                    &m_CircularBuffer[m_LocalIndex + HEADER_SIZE], msgSize);
+
+        // Move pointers
+        const int totalBytesRead = HEADER_SIZE + msgSize;
+        m_LocalIndex += totalBytesRead;
+        m_LocalSeqNum += totalBytesRead;
+
+        SPDLOG_DEBUG("Detected wraparound - header can't fit");
+    }
+
+    // Overwrite detection: How far behind in sequence number are we?
+    lag = m_State->seqNum.load(std::memory_order_acquire) - m_LocalSeqNum;
+    if (lag > m_CircularBuffer.size_bytes()) [[unlikely]] {
+        // Overwritten
+        SPDLOG_CRITICAL("Overwrite detected: writer is {} bytes ahead of me",
+                        lag);
+        return INT_MIN;
+    }
 
     SPDLOG_DEBUG("Read message of size {} bytes", msgSize);
     return msgSize;

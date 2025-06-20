@@ -19,8 +19,6 @@ public:
                        .count());
     }
 
-    EXPLICIT_DELETE_CONSTRUCTORS(WaitTimeGenerator);
-
     // Generate random exponential arrival time with nanosecond precision
     std::chrono::nanoseconds operator()() {
         double millis = m_Dist(m_Rng);

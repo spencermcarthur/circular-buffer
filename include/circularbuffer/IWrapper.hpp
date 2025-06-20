@@ -21,10 +21,12 @@ protected:
     // Buffer state
     State *m_State{nullptr};
     // Buffer data
-    BufferT m_Buffer;
+    BufferT m_CircularBuffer;
     // Local cache of index to avoid atomic ops on shared buffer indices as much
     // as possible.
     IndexT m_LocalIndex;
+    // Local sequence number to track bytes written/read
+    SeqNumT m_LocalSeqNum{0};
 
 private:
     SharedMemory *m_StateRegion{nullptr};

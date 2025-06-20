@@ -3,8 +3,8 @@
 #include <cstddef>
 
 #include "Aliases.hpp"
-#include "Macros.hpp"
 #include "IWrapper.hpp"
+#include "Macros.hpp"
 #include "Spec.hpp"
 
 namespace CircularBuffer {
@@ -22,10 +22,6 @@ public:
     int Read(BufferT readBuffer);
     // Compatibility interface
     int Read(DataT *data, size_t size) { return Read({data, size}); }
-
-private:
-    IndexT m_CachedReadIdx;
-    IndexT m_CachedWriteIdx;
 };
 
 }  // namespace CircularBuffer

@@ -52,6 +52,8 @@ add_compile_definitions(
     __MAX_SHARED_MEM_SIZE_MIB=${MAX_SHARED_MEM_SIZE_MIB}
     __MAX_MESSAGE_SIZE_BYTES=${MAX_MESSAGE_SIZE_BYTES}
     __CACHELINE_SIZE_BYTES=${CACHELINE_SIZE_BYTES}
+    SPDLOG_COMPILED_LIB=1  # Compile as shared library
+    SPDLOG_USE_STD_FORMAT=1  # Use <format> header instead of libfmt
 )
 
 

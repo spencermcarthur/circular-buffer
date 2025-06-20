@@ -13,7 +13,7 @@
 
 namespace CircularBuffer {
 
-IWrapper::IWrapper(const Spec &spec) {
+IWrapper::IWrapper(const Spec &spec) : m_LocalIndex(0), m_LocalSeqNum(0) {
     SetupSpdlog();
 
     // Load/map shared memory regions
@@ -32,17 +32,14 @@ IWrapper::IWrapper(const Spec &spec) {
     }
 
     // Reinterpret buffer region as span and verify
-    m_Buffer = m_DataRegion->AsSpan<DataT>();
-    if (m_Buffer.data() == nullptr || m_Buffer.empty()) {
+    m_CircularBuffer = m_DataRegion->AsSpan<DataT>();
+    if (m_CircularBuffer.data() == nullptr || m_CircularBuffer.empty()) {
         // Fail
         CONSTEXPR_SV fmt =
             "({}:{}) Reinterpretation of buffer data region as span failed";
         SPDLOG_ERROR(fmt.substr(8));
         throw std::runtime_error(std::format(fmt, __FILE__, __LINE__));
     }
-
-    // Set local index
-    m_LocalIndex = 0;
 }
 
 IWrapper::~IWrapper() {

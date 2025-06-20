@@ -1,7 +1,9 @@
 #include "circularbuffer/Writer.hpp"
 
 #include <atomic>
-#include <cstddef>
+#ifdef DEBUG
+#include <cassert>
+#endif
 #include <cstring>
 #include <format>
 #include <stdexcept>
@@ -24,8 +26,9 @@ Writer::Writer(const Spec& spec)
     // Writer sets initial shared buffer iterators
     m_State->readIdx.store(0, std::memory_order_release);
     m_State->writeIdx.store(0, std::memory_order_release);
+    m_State->seqNum.store(0, std::memory_order_release);
 
-    m_NextElement = m_Buffer.begin();
+    m_NextElement = m_CircularBuffer.begin();
 }
 
 Writer::~Writer() {
@@ -44,6 +47,8 @@ void Writer::EnsureSingleton() {
 }
 
 bool Writer::Write(BufferT writeBuffer) {
+    static_assert(HEADER_SIZE <= sizeof(int));
+
     // Validate incoming message size
     if (writeBuffer.size_bytes() > MAX_MESSAGE_SIZE) [[unlikely]] {
         SPDLOG_ERROR("Can't write message of size {} B: max size is {} B",
@@ -51,43 +56,111 @@ bool Writer::Write(BufferT writeBuffer) {
         return false;
     }
 
+    // Compute some values we'll need
     const MessageSizeT msgSize = writeBuffer.size_bytes();
-    const size_t totalBytesToWrite = HEADER_SIZE + msgSize;
+    const int totalBytesToWrite = HEADER_SIZE + msgSize;
+    const int spaceToEnd = m_CircularBuffer.size_bytes() - m_LocalIndex;
 
-    /* Handle wraparound
-     * If what we need to write is bigger than the remaining
-     * space to the end of the buffer, then we want to start writing back at the
-     * beginning of the buffer. Want to avoid writing logic to wrap messages
-     * around from end to beginning. */
-    if (totalBytesToWrite > m_Buffer.size_bytes() - m_LocalIndex) {
-        /* Zero out the next message size
-         * This signals to readers that they should start reading back at the
-         * beginning of the buffer for the next message. */
-        std::memset(m_NextElement.base(), '\0', HEADER_SIZE);
-        m_LocalIndex = 0;
-        m_NextElement = m_Buffer.begin();
+    // Compute the end of the next write region
+    m_LocalIndex += totalBytesToWrite;
 
-        SPDLOG_DEBUG("Wrapping");
+    // Enough space to write
+    if (totalBytesToWrite <= spaceToEnd) [[likely]] {
+        // Advance write index to "reserve" buffer space
+        m_State->writeIdx.store(m_LocalIndex, std::memory_order_release);
+
+        // Write message size and data
+        std::memcpy(m_NextElement.base(), &msgSize, HEADER_SIZE);
+        std::memcpy(m_NextElement.base() + HEADER_SIZE, writeBuffer.data(),
+                    msgSize);
+
+        // Advance next write element
+        m_NextElement += totalBytesToWrite;
+    }
+    // Wrapping around
+    else {
+        // Can fit header
+        if (spaceToEnd >= HEADER_SIZE) [[likely]] {
+            // Compute index after wraparound
+            m_LocalIndex %= m_CircularBuffer.size_bytes();
+
+            // Track bytes left to write
+            int bytesRemaining = totalBytesToWrite;
+#ifdef DEBUG
+            // Track bytes written
+            int bytesWritten = 0;
+#endif
+
+            // Advance write index to "reserve" buffer space
+            m_State->writeIdx.store(m_LocalIndex, std::memory_order_release);
+
+            // Write header and first part of message
+            std::memcpy(m_NextElement.base(), &msgSize, HEADER_SIZE);
+            std::memcpy(m_NextElement.base() + HEADER_SIZE, writeBuffer.data(),
+                        spaceToEnd - HEADER_SIZE);
+
+            // Move pointer to start of buffer
+            m_NextElement = m_CircularBuffer.begin();
+            // Decrement write countdown
+            bytesRemaining -= spaceToEnd;
+
+#ifdef DEBUG
+            // Write exactly what was passed to std::memcpy
+            bytesWritten += HEADER_SIZE;
+            bytesWritten += (spaceToEnd - HEADER_SIZE);
+#endif
+
+            // Write rest of message
+            std::memcpy(m_NextElement.base(),
+                        writeBuffer.data() + bytesRemaining, bytesRemaining);
+
+            m_NextElement += bytesRemaining;
+
+#ifdef DEBUG
+            bytesWritten += bytesRemaining;
+            // Make sure we wrote the correct amount of bytes
+            assert(bytesWritten == totalBytesToWrite);
+            // Make sure we tracked remaining bytes correctly
+            assert(bytesRemaining == totalBytesToWrite - spaceToEnd);
+#endif
+
+            SPDLOG_DEBUG("Wrapped around - split write");
+        }
+        // Can't fit header - reader will need to do the same calculation to
+        // know to wrap around
+        else {
+            // Move write index to "reserve" buffer space
+            m_LocalIndex = msgSize + HEADER_SIZE;
+            m_State->writeIdx.store(m_LocalIndex, std::memory_order_release);
+
+            // Move write location to beginning of buffer
+            m_NextElement = m_CircularBuffer.begin();
+
+            // Write header and message
+            std::memcpy(m_NextElement.base(), &msgSize, HEADER_SIZE);
+            std::memcpy(m_NextElement.base() + HEADER_SIZE, writeBuffer.data(),
+                        msgSize);
+
+            // Advance next write element
+            m_NextElement += totalBytesToWrite;
+
+            SPDLOG_DEBUG("Wrapped around - not enough room for header");
+        }
     }
 
-    // Advance write index - indicates write in progress
-    m_LocalIndex += totalBytesToWrite;
-    m_State->writeIdx.store(m_LocalIndex, std::memory_order_release);
+#ifdef DEBUG
+    // Make sure next element is set where we put the write index
+    assert(m_NextElement.base() == &m_CircularBuffer[m_State->writeIdx]);
+#endif
 
-    // Write message size to buffer
-    std::memcpy(m_NextElement.base(), &msgSize, HEADER_SIZE);
+    // Update write sequence number
+    m_LocalSeqNum += totalBytesToWrite;
+    m_State->seqNum.store(m_LocalSeqNum, std::memory_order_release);
 
-    // Write message to buffer
-    std::memcpy(m_NextElement.base() + HEADER_SIZE, writeBuffer.data(),
-                msgSize);
-
-    // Advance read index - indicates write complete
+    // Advance read index to indicate that it's safe to read
     m_State->readIdx.store(m_LocalIndex, std::memory_order_release);
 
-    // Advance next element to next write region
-    m_NextElement += totalBytesToWrite;
-
-    SPDLOG_DEBUG("Wrote message of size {} B", msgSize);
+    SPDLOG_DEBUG("Wrte message of size {} bytes", msgSize);
     return true;
 }
 

@@ -76,10 +76,11 @@ TEST_F(Reader, Wraparoud) {
     BufferT readBuffer = MakeBuffer(msgSize, '\0');
 
     const int bytesPerWrite = HEADER_SIZE + msgSize;
-    const int writesBeforeWrap = bufferSize / bytesPerWrite;
+    const int writesToWrap = bufferSize / bytesPerWrite + 1;
+    const int expectedPosAfter = (writesToWrap * bytesPerWrite) % bufferSize;
 
     // Read and write
-    for (int i = 0; i < writesBeforeWrap; i++) {
+    for (int i = 0; i < writesToWrap - 1; i++) {
         writer->Write(writeBuffer);
         EXPECT_EQ(state->writeIdx, (i + 1) * bytesPerWrite);
         EXPECT_EQ(state->readIdx, (i + 1) * bytesPerWrite);
@@ -91,8 +92,8 @@ TEST_F(Reader, Wraparoud) {
     const int newValue = 'x';
     std::memset(writeBuffer.data(), newValue, writeBuffer.size());
     writer->Write(writeBuffer);
-    EXPECT_EQ(state->writeIdx, bytesPerWrite);
-    EXPECT_EQ(state->readIdx, bytesPerWrite);
+    EXPECT_EQ(state->writeIdx, expectedPosAfter);
+    EXPECT_EQ(state->readIdx, expectedPosAfter);
 
     // Read and verify
     EXPECT_EQ(reader.Read(readBuffer), msgSize);
@@ -103,6 +104,8 @@ TEST_F(Reader, Wraparoud) {
     delete[] writeBuffer.data();
     delete[] readBuffer.data();
 }
+
+// TODO:
 
 TEST_F(Reader, ReadFailBufferTooSmall) {
     CB::Reader reader(spec);

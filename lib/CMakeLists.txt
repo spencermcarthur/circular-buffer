@@ -3,10 +3,6 @@ add_library(spdlog SHARED
     ${SPDLOG_SRC}
 )
 target_include_directories(spdlog PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_compile_definitions(spdlog PUBLIC 
-    SPDLOG_COMPILED_LIB=1
-    SPDLOG_USE_STD_FORMAT=1
-)
 
 
 # Main CircularBuffer library

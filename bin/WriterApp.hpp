@@ -2,43 +2,47 @@
 
 #include <atomic>
 #include <csignal>
+#include <cstring>
 #include <thread>
 
-#include "Macros.hpp"
-#include "Demo.hpp"
+#include "Common.hpp"
 #include "Generators.hpp"
+#include "Macros.hpp"
 #include "circularbuffer/Writer.hpp"
 
 class WriterApp {
     static constexpr double FAST_ARRIVAL_RATE = 50;
-    static constexpr double NORMAL_ARRIVAL_RATE = 200;
-    static constexpr double SLOW_ARRIVAL_RATE = 500;
+    static constexpr double NORMAL_ARRIVAL_RATE = 100;
     static constexpr double MEAN_MSG_SIZE = 300;
 
 public:
-    explicit WriterApp(int argc, char* argv[])
-        : m_Writer(LoadSpec(argc, argv)) {}
+    explicit WriterApp(int argc, char* argv[], bool fast = false)
+        : m_Writer(LoadSpec(argc, argv)),
+          m_Fast((fast || (argc == 2 && std::strcmp(argv[1], "fast") == 0) ||
+                  (argc == 3 && std::strcmp(argv[2], "fast") == 0))),
+          m_WaitTimeGen(m_Fast ? FAST_ARRIVAL_RATE : NORMAL_ARRIVAL_RATE) {}
 
     EXPLICIT_DELETE_CONSTRUCTORS(WriterApp);
 
     void Run() {
-        std::signal(SIGINT, WriterApp::Stop);
-        sm_Running.store(true, std::memory_order_release);
+        m_Running = true;
 
-        while (sm_Running.load(std::memory_order_acquire)) {
+        while (m_Running.load(std::memory_order_acquire)) {
             RandomMessage msg(m_MsgSizeGen());
             m_Writer.Write(msg.buf());
             std::this_thread::sleep_for(m_WaitTimeGen());
         }
     }
 
-private:
-    static void Stop(int) {
-        sm_Running.store(false, std::memory_order_release);
+    [[nodiscard]] bool Running() const {
+        return m_Running.load(std::memory_order_acquire);
     }
+    void Stop() { m_Running.store(false, std::memory_order_release); }
 
+private:
     CircularBuffer::Writer m_Writer;
-    WaitTimeGenerator m_WaitTimeGen{NORMAL_ARRIVAL_RATE};
     MessageSizeGenerator m_MsgSizeGen{MEAN_MSG_SIZE};
-    inline static std::atomic_bool sm_Running = false;
+    std::atomic_bool m_Running{false};
+    const bool m_Fast;
+    WaitTimeGenerator m_WaitTimeGen;
 };

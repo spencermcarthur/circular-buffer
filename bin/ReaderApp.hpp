@@ -5,12 +5,10 @@
 #include <csignal>
 #include <cstdint>
 #include <cstring>
-#include <format>
-#include <stdexcept>
 #include <thread>
 
+#include "Common.hpp"
 #include "Macros.hpp"
-#include "Demo.hpp"
 #include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/Reader.hpp"
 
@@ -18,45 +16,41 @@ class ReaderApp {
     static constexpr uint64_t SLOW_READER_DELAY_MILLIS = 500;
 
 public:
-    explicit ReaderApp(int argc, char* argv[])
+    explicit ReaderApp(int argc, char* argv[], bool slow = false)
         : m_Reader(LoadSpec(argc, argv)),
-          m_BufferData(new CircularBuffer::DataT[m_BufferSize]{}),
-          m_Slow((argc == 2 && strcmp(argv[1], "slow") == 0) ||
+          m_Slow(slow || (argc == 2 && strcmp(argv[1], "slow") == 0) ||
                  ((argc == 3 && strcmp(argv[2], "slow") == 0))) {}
-    ~ReaderApp() { delete[] m_BufferData; }
 
     EXPLICIT_DELETE_CONSTRUCTORS(ReaderApp);
 
     void Run() {
-        std::signal(SIGINT, ReaderApp::Stop);
-        sm_Running.store(true, std::memory_order_release);
+        CircularBuffer::BufferT readBuffer(m_BufferData, BUFSZ);
+        m_Running = true;
 
-        CircularBuffer::BufferT readBuffer(m_BufferData, m_BufferSize);
-        while (sm_Running.load(std::memory_order_acquire)) {
+        while (m_Running) {
             const int bytesRead = m_Reader.Read(readBuffer);
 
+            // Nothing to read
             if (bytesRead == 0) {
                 continue;
             }
 
+            // Error
             if (bytesRead < 0) {
-                if (bytesRead == -1) {
-                    throw std::runtime_error(std::format("Buffer too small"));
-                }
-                if (bytesRead == INT_MIN) {
-                    throw std::runtime_error(std::format("Overwritten"));
-                }
+                break;
             }
 
+            // "Process" message
             SimulateProcessing(readBuffer);
         }
+
+        m_Running = false;
     }
+
+    [[nodiscard]] bool Running() const { return m_Running; }
+    void Stop() { m_Running = false; }
 
 private:
-    static void Stop(int) {
-        sm_Running.store(false, std::memory_order_release);
-    }
-
     void SimulateProcessing(CircularBuffer::BufferT) const {
         if (m_Slow) {
             std::this_thread::sleep_for(
@@ -65,8 +59,8 @@ private:
     }
 
     CircularBuffer::Reader m_Reader;
-    inline static std::atomic_bool sm_Running = false;
-    CircularBuffer::DataT* m_BufferData;
-    static constexpr size_t m_BufferSize = CircularBuffer::MAX_MESSAGE_SIZE;
+    std::atomic_bool m_Running{false};
+    static constexpr size_t BUFSZ = CircularBuffer::MAX_MESSAGE_SIZE;
+    CircularBuffer::DataT m_BufferData[BUFSZ]{};
     const bool m_Slow;
 };
