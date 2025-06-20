@@ -13,6 +13,7 @@
 using namespace CircularBuffer;
 
 void BM_Write(benchmark::State& state) {
+    // Disable logging
     spdlog::set_level(spdlog::level::off);
 
     // Set up write buffer
@@ -26,20 +27,20 @@ void BM_Write(benchmark::State& state) {
     Spec spec{"/bench-index", "/bench-data", bufferSize};
     Writer writer(spec);
 
-    for (auto iter : state) {
+    // Benchmark
+    for (auto _ : state) {
         writer.Write(writeBuffer);
-        benchmark::ClobberMemory();
     }
+    state.SetItemsProcessed(state.iterations());
 
+    // Free buffer data
     delete[] msgData;
-
-    state.SetBytesProcessed(state.iterations() * msgSize);
 }
 
 BENCHMARK(BM_Write)->Ranges({
-    {1, MAX_MESSAGE_SIZE},  // Message size
-    {Writer::MIN_BUFFER_SIZE_BYTES,
-     SharedMemory::MAX_SIZE_BYTES},  // Buffer size
+    {1, MAX_MESSAGE_SIZE},  // Message size range
+    {HEADER_SIZE + MAX_MESSAGE_SIZE,
+     SharedMemory::MAX_SIZE_BYTES},  // Buffer size range
 });
 
 BENCHMARK_MAIN();
