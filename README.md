@@ -5,7 +5,8 @@
 ✅ Shared memory for IPC between one writer process and multiple reader processes \
 ✅ Asynchronous read/write \
 ✅ Dynamic buffer size defined at runtime[^1] \
-✅ Reader overwrite detection
+✅ Reader overwrite detection \
+✅ Debug logging (libspdlog bundled)
 
 ## Requirements
 - C++20 STL
@@ -199,7 +200,8 @@ The `WriterBenchmark` demonstrates the performance effects of different combinat
 2. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024 (PDF)](https://github.com/CppCon/CppCon2024/blob/main/Presentations/When_Nanoseconds_Matter.pdf)
 3. [shm_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/shm_overview.7.html)
 4. [sem_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/sem_overview.7.html)
-5. [ccpreference](https://cppreference.com/)
+5. [ccpreference - Atomic types](https://cppreference.com/w/cpp/atomic.html#Atomic_types)
+6. [spdlog](https://github.com/gabime/spdlog)
 
 [^1]: Up to 50 MiB. This is a somewhat arbitrary limitation and can be changed at compile time via command-line input, but benchmarks show that writing to a very large buffer is less performant than a small/medium buffer, probably due to cache contention.
 
