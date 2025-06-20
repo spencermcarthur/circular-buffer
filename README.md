@@ -149,8 +149,8 @@ The reader performs the same wraparound checks as the writer, and reads the data
 - Running in Debug configuration displays log messages that are not present in Release, and also performs additional sanity checks in the `Reader` and `Writer` code to ensure the algorithms are operating as expected.
 
 ## References
-1. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024](https://www.youtube.com/watch?v=sX2nF1fW7kI)
-2. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross (PDF)](https://github.com/CppCon/CppCon2024/blob/main/Presentations/When_Nanoseconds_Matter.pdf)
+1. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024 (YouTube)](https://www.youtube.com/watch?v=sX2nF1fW7kI)
+2. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024 (PDF)](https://github.com/CppCon/CppCon2024/blob/main/Presentations/When_Nanoseconds_Matter.pdf)
 3. [shm_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/shm_overview.7.html)
 4. [sem_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/sem_overview.7.html)
 5. [ccpreference](https://cppreference.com/)
