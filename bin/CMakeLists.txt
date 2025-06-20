@@ -7,8 +7,8 @@ else()
     link_libraries(circularbuffer)
 endif()
 
-add_executable(WriterApp EXCLUDE_FROM_ALL Writer.cpp)
-add_executable(ReaderApp EXCLUDE_FROM_ALL Reader.cpp)
+add_executable(WriterApp EXCLUDE_FROM_ALL WriterApp.cpp)
+add_executable(ReaderApp EXCLUDE_FROM_ALL ReaderApp.cpp)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bufferconfig.txt 
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
