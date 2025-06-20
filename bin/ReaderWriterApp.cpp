@@ -14,20 +14,22 @@ std::atomic_bool g_Running{true};
 void Stop(int) { g_Running.store(false, std::memory_order_release); }
 
 int main(int argc, char* argv[]) {
-    ReaderApp reader(argc, argv, true);
-    WriterApp writer(argc, argv, true);
+    std::signal(SIGINT, Stop);
+
+    ReaderApp reader(argc, argv);
+    WriterApp writer(argc, argv);
 
     std::thread readerThread(&ReaderApp::Run, std::ref(reader));
     std::thread writerThread(&WriterApp::Run, std::ref(writer));
 
-    std::signal(SIGINT, Stop);
+    // Wait for reader to start
+    while (!reader.Running()) {
+        std::this_thread::sleep_for(1s);
+    }
 
-    while (g_Running.load(std::memory_order_acquire)) {
+    // Keep running until signaled or reader errors
+    while (g_Running && reader.Running()) {
         std::this_thread::sleep_for(100ms);
-
-        if (!(reader.Running() && writer.Running())) {
-            break;
-        }
     }
 
     writer.Stop();

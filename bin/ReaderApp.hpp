@@ -3,7 +3,6 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
-#include <cstdint>
 #include <cstring>
 #include <thread>
 
@@ -13,13 +12,18 @@
 #include "circularbuffer/Reader.hpp"
 
 class ReaderApp {
-    static constexpr uint64_t SLOW_READER_DELAY_MILLIS = 500;
+    static constexpr std::chrono::microseconds NORMAL_READER_DELAY{10};
+    // 500 ms - very slow
+    static constexpr std::chrono::microseconds SLOW_READER_DELAY{500'000};
 
 public:
     explicit ReaderApp(int argc, char* argv[], bool slow = false)
-        : m_Reader(LoadSpec(argc, argv)),
-          m_Slow(slow || (argc == 2 && strcmp(argv[1], "slow") == 0) ||
-                 ((argc == 3 && strcmp(argv[2], "slow") == 0))) {}
+        : m_Reader(LoadSpec(argv[0])),
+          m_IsSlow(slow || (argc == 2 && strcmp(argv[1], "slow") == 0) ||
+                   ((argc == 3 && (strcmp(argv[1], "slow") == 0 ||
+                                   strcmp(argv[2], "slow") == 0)))),
+          m_ProcessingDelayMics(m_IsSlow ? SLOW_READER_DELAY
+                                         : NORMAL_READER_DELAY) {}
 
     EXPLICIT_DELETE_CONSTRUCTORS(ReaderApp);
 
@@ -52,15 +56,15 @@ public:
 
 private:
     void SimulateProcessing(CircularBuffer::BufferT) const {
-        if (m_Slow) {
-            std::this_thread::sleep_for(
-                std::chrono::milliseconds(SLOW_READER_DELAY_MILLIS));
-        }
+        std::this_thread::sleep_for(m_ProcessingDelayMics);
     }
 
     CircularBuffer::Reader m_Reader;
     std::atomic_bool m_Running{false};
+
     static constexpr size_t BUFSZ = CircularBuffer::MAX_MESSAGE_SIZE;
     CircularBuffer::DataT m_BufferData[BUFSZ]{};
-    const bool m_Slow;
+
+    const bool m_IsSlow;
+    const std::chrono::microseconds m_ProcessingDelayMics;
 };

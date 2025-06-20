@@ -7,13 +7,17 @@
 #include <random>
 
 #include "Macros.hpp"
+#include "circularbuffer/Aliases.hpp"
 
+using MsgSize = CircularBuffer::MessageSizeT;
+
+// Generates random wait times using exponential distribution
 class WaitTimeGenerator {
     static constexpr uint64_t NANOS_PER_MILLI = 1'000'000;
 
 public:
-    explicit WaitTimeGenerator(double meanArrivalRateMillis)
-        : m_Dist(1.0 / meanArrivalRateMillis) {
+    explicit WaitTimeGenerator(double meanArrivalTimeMillis)
+        : m_Dist(1.0 / meanArrivalTimeMillis) {
         m_Rng.seed(std::chrono::high_resolution_clock::now()
                        .time_since_epoch()
                        .count());
@@ -31,23 +35,25 @@ private:
     std::exponential_distribution<double> m_Dist;
 };
 
+// Generates random message length using normal distribution
 class MessageSizeGenerator {
 public:
-    explicit MessageSizeGenerator(double meanSize) : m_Dist(1.0 / meanSize) {
+    explicit MessageSizeGenerator(double meanSize, double stdDev)
+        : m_Dist(meanSize, stdDev) {
         m_Rng.seed(std::chrono::high_resolution_clock::now()
                        .time_since_epoch()
                        .count());
     }
 
     EXPLICIT_DELETE_COPY_MOVE(MessageSizeGenerator);
-    uint16_t operator()() { return Clip(m_Dist(m_Rng)); }
+    MsgSize operator()() { return Clip(m_Dist(m_Rng)); }
 
 private:
-    static uint16_t Clip(double value) {
-        static constexpr uint16_t min = 1;
-        static constexpr uint16_t max = std::numeric_limits<uint16_t>::max();
+    static MsgSize Clip(double value) {
+        static constexpr MsgSize min = 1;
+        static constexpr MsgSize max = std::numeric_limits<uint16_t>::max();
 
-        uint16_t ret;
+        MsgSize ret;
         if (value < min) {
             ret = min;
         } else if (value > max) {
@@ -60,22 +66,23 @@ private:
     }
 
     std::default_random_engine m_Rng;
-    std::exponential_distribution<double> m_Dist;
+    std::normal_distribution<double> m_Dist;
 };
 
+// Generates random data
 class RandomMessage {
     using data_t = std::byte;
-    static constexpr uint8_t MIN_BYTE_VAL = 0;
-    static constexpr uint8_t MAX_BYTE_VAL = 255;
+    static constexpr uint8_t MIN_BYTE_VAL = std::numeric_limits<uint8_t>::min();
+    static constexpr uint8_t MAX_BYTE_VAL = std::numeric_limits<uint8_t>::max();
 
 public:
-    explicit RandomMessage(uint16_t size) : m_Size(size) {
+    explicit RandomMessage(MsgSize size) : m_Size(size) {
         m_Rng.seed(std::chrono::high_resolution_clock::now()
                        .time_since_epoch()
                        .count());
         m_Data = new data_t[m_Size]{};
 
-        for (uint16_t i = 0; i < m_Size; i++) {
+        for (MsgSize i = 0; i < m_Size; i++) {
             m_Data[i] = data_t(m_Dist(m_Rng));
         }
     }
@@ -85,8 +92,10 @@ public:
     EXPLICIT_DELETE_CONSTRUCTORS(RandomMessage);
 
     [[nodiscard]] data_t* data() const { return m_Data; }
-    [[nodiscard]] uint16_t size() const { return m_Size; }
-    [[nodiscard]] std::span<data_t> buf() const { return {m_Data, m_Size}; }
+    [[nodiscard]] MsgSize size() const { return m_Size; }
+    [[nodiscard]] std::span<data_t> buf() const {
+        return {m_Data, static_cast<size_t>(m_Size)};
+    }
 
     friend bool operator==(const RandomMessage& a, const RandomMessage& b) {
         auto m1 = a.buf();
@@ -96,7 +105,7 @@ public:
             return false;
         }
 
-        for (size_t i = 0; i < a.size(); i++) {
+        for (MsgSize i = 0; i < a.size(); i++) {
             if (m1[i] != m2[i]) {
                 return false;
             }
@@ -107,7 +116,7 @@ public:
 
 private:
     data_t* m_Data{nullptr};
-    const size_t m_Size;
+    const MsgSize m_Size;
     std::default_random_engine m_Rng;
     std::uniform_int_distribution<int> m_Dist;
 };

@@ -7,7 +7,7 @@
 
 #include "circularbuffer/Spec.hpp"
 
-static CircularBuffer::Spec LoadSpec(int argc, char* argv[]) {
+static CircularBuffer::Spec LoadSpec(std::string_view exeName) {
     static auto Load = [](const std::filesystem::path& path,
                           CircularBuffer::Spec& spec) {
         std::ifstream fin(path);
@@ -21,19 +21,13 @@ static CircularBuffer::Spec LoadSpec(int argc, char* argv[]) {
 
     CircularBuffer::Spec spec;
     std::filesystem::path specFile{std::filesystem::absolute(
-        std::filesystem::path(argv[0]).parent_path() / "bufferconfig.txt")};
+        std::filesystem::path(exeName).parent_path() / "bufferconfig.txt")};
 
     if (std::filesystem::is_regular_file(specFile)) {
         Load(specFile, spec);
-    } else if (argc != 2) {
-        throw std::runtime_error(std::format("Usage: {} <config>\n", argv[0]));
     } else {
-        try {
-            Load(argv[1], spec);
-        } catch (std::exception& e) {
-            throw std::runtime_error(
-                std::format("Failed to load spec file {}", argv[1]));
-        }
+        throw std::runtime_error(
+            std::format("Failed to load spec file {}", specFile.string()));
     }
 
     return spec;
