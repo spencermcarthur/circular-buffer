@@ -3,7 +3,7 @@
 ## Features
 ✅ Arbitrary-length messages from 1 to 65535 bytes \
 ✅ Shared memory for IPC between one writer process and multiple reader processes \
-✅ Dynamic buffer size up to 50 MiB<sup>[1](#cache-size)</sup> \
+✅ Dynamic buffer size up to 50 MiB[^1] \
 ✅ Reader overwrite detection
 
 ## Requirements
@@ -94,4 +94,4 @@ An interface class that owns `SharedMemory` objects that manage access to buffer
 - [ccpreference](https://cppreference.com/)
 
 ## Notes
-<a name="cache-size">1</a> Somewhat arbitrary, but benchmarks show that writing large messages into a large buffer is less performant than large messages into a smalle buffer, probably due to cache contention.
+[^1]: Somewhat arbitrary, but benchmarks show that writing large messages into a large buffer is less performant than large messages into a smalle buffer, probably due to cache contention.
