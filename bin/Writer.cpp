@@ -1,8 +1,8 @@
 #include <csignal>
 
-#include "WriterDemo.hpp"
+#include "WriterApp.hpp"
 
 int main(int argc, char *argv[]) {
-    WriterDemo demo(argc, argv);
-    demo.Run();
+    WriterApp app(argc, argv);
+    app.Run();
 }

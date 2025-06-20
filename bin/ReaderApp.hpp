@@ -14,21 +14,21 @@
 #include "circularbuffer/Aliases.hpp"
 #include "circularbuffer/Reader.hpp"
 
-class ReaderDemo {
+class ReaderApp {
     static constexpr uint64_t SLOW_READER_DELAY_MILLIS = 500;
 
 public:
-    explicit ReaderDemo(int argc, char* argv[])
+    explicit ReaderApp(int argc, char* argv[])
         : m_Reader(LoadSpec(argc, argv)),
           m_BufferData(new CircularBuffer::DataT[m_BufferSize]{}),
           m_Slow((argc == 2 && strcmp(argv[1], "slow") == 0) ||
                  ((argc == 3 && strcmp(argv[2], "slow") == 0))) {}
-    ~ReaderDemo() { delete[] m_BufferData; }
+    ~ReaderApp() { delete[] m_BufferData; }
 
-    EXPLICIT_DELETE_CONSTRUCTORS(ReaderDemo);
+    EXPLICIT_DELETE_CONSTRUCTORS(ReaderApp);
 
     void Run() {
-        std::signal(SIGINT, ReaderDemo::Stop);
+        std::signal(SIGINT, ReaderApp::Stop);
         sm_Running.store(true, std::memory_order_release);
 
         CircularBuffer::BufferT readBuffer(m_BufferData, m_BufferSize);

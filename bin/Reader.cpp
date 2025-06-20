@@ -1,8 +1,8 @@
 #include <csignal>
 
-#include "ReaderDemo.hpp"
+#include "ReaderApp.hpp"
 
 int main(int argc, char *argv[]) {
-    ReaderDemo demo(argc, argv);
-    demo.Run();
+    ReaderApp app(argc, argv);
+    app.Run();
 }

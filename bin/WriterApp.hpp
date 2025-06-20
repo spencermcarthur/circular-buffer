@@ -9,20 +9,20 @@
 #include "Generators.hpp"
 #include "circularbuffer/Writer.hpp"
 
-class WriterDemo {
+class WriterApp {
     static constexpr double FAST_ARRIVAL_RATE = 50;
     static constexpr double NORMAL_ARRIVAL_RATE = 200;
     static constexpr double SLOW_ARRIVAL_RATE = 500;
     static constexpr double MEAN_MSG_SIZE = 300;
 
 public:
-    explicit WriterDemo(int argc, char* argv[])
+    explicit WriterApp(int argc, char* argv[])
         : m_Writer(LoadSpec(argc, argv)) {}
 
-    EXPLICIT_DELETE_CONSTRUCTORS(WriterDemo);
+    EXPLICIT_DELETE_CONSTRUCTORS(WriterApp);
 
     void Run() {
-        std::signal(SIGINT, WriterDemo::Stop);
+        std::signal(SIGINT, WriterApp::Stop);
         sm_Running.store(true, std::memory_order_release);
 
         while (sm_Running.load(std::memory_order_acquire)) {
