@@ -47,6 +47,12 @@ int Reader::Read(BufferT readBuffer) {
         // Read message size
         std::memcpy(&msgSize, &m_CircularBuffer[m_LocalIndex], HEADER_SIZE);
 
+        // Validate message size
+        if (msgSize < 0 || msgSize > MAX_MESSAGE_SIZE) [[unlikely]] {
+            SPDLOG_CRITICAL("Message size error: {} is invalid", msgSize);
+            return -1;
+        }
+
 #ifdef DEBUG
         // Track bytes read/remaining as we read
         int totalBytesRead = HEADER_SIZE;
@@ -120,6 +126,12 @@ int Reader::Read(BufferT readBuffer) {
 
         // Read message size
         std::memcpy(&msgSize, &m_CircularBuffer[m_LocalIndex], HEADER_SIZE);
+
+        // Validate message size
+        if (msgSize < 0 || msgSize > MAX_MESSAGE_SIZE) [[unlikely]] {
+            SPDLOG_CRITICAL("Message size error: {} is invalid", msgSize);
+            return -1;
+        }
 
         // Check read buffer is big enough
         if (static_cast<size_t>(msgSize) > readBuffer.size_bytes())
