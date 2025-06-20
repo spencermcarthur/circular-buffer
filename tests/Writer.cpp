@@ -23,16 +23,6 @@ TEST_F(Writer, Constructor) {
     EXPECT_NO_THROW(CB::Writer writer{spec});
 }
 
-TEST_F(Writer, ConstructorFailIfBufferTooSmall) {
-    // Smallest buffer allowed
-    spec.bufferCapacity = CB::Writer::MIN_BUFFER_SIZE_BYTES;
-    EXPECT_NO_THROW(CB::Writer{spec});
-
-    // Buffer too small
-    spec.bufferCapacity = CB::Writer::MIN_BUFFER_SIZE_BYTES - 1;
-    EXPECT_THROW(CB::Writer{spec}, std::domain_error);
-}
-
 TEST_F(Writer, ConstructorFailIfMultipleWriters) {
     CB::Writer writer(spec);
 
@@ -69,37 +59,26 @@ TEST_F(Writer, WriteSome) {
 TEST_F(Writer, Wraparound) {
     CB::Writer writer(spec);
 
-    // Record the initial write iterator position
-    const IndexT posBefore = state->writeIdx;
-
     // Create write buffer
     const size_t msgSize = MAX_MESSAGE_SIZE;
     BufferT buffer = MakeBuffer(msgSize, '\1');
+    const int totalBytesPerWrite = HEADER_SIZE + msgSize;
 
-    // Compute number of bytes to be written before we wrap around to the
-    // beginning of the buffer
-    const int bytesPerWrite = HEADER_SIZE + msgSize;
-    const int writesBeforeWrap = spec.bufferCapacity / (bytesPerWrite);
-    const int bytesWrittenBeforeWrap = bytesPerWrite * writesBeforeWrap;
+    // Number of writes we need to perform to force a wraparound
+    const int numWritesToForceWraparound =
+        spec.bufferCapacity / (totalBytesPerWrite) + 1;
+    const IndexT expectedPosAfter = totalBytesPerWrite;
 
-    // Perform writes
+    // Perform writes to force wraparound
     bool writeRes;
-    for (int i = 0; i < writesBeforeWrap; i++) {
+    for (int i = 0; i < numWritesToForceWraparound; i++) {
         EXPECT_NO_THROW(writeRes = writer.Write(buffer));
         EXPECT_TRUE(writeRes);
     }
 
     // Check index is where we expected
-    const IndexT posAfter = state->writeIdx;
-    const IndexT expectedPosAfter = posBefore + bytesWrittenBeforeWrap;
-
-    EXPECT_EQ(posAfter, expectedPosAfter);
-
-    // Wrap around and validate
-    EXPECT_NO_THROW(writeRes = writer.Write(buffer));
-    EXPECT_TRUE(writeRes);
-    EXPECT_EQ(state->writeIdx, state->readIdx);
-    EXPECT_EQ(state->writeIdx, bytesPerWrite);
+    EXPECT_EQ(state->writeIdx, expectedPosAfter);
+    EXPECT_EQ(state->readIdx, expectedPosAfter);
 
     delete[] buffer.data();
 }

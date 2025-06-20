@@ -5,7 +5,8 @@ enable_testing()
 add_library(testing SHARED EXCLUDE_FROM_ALL Utils.cpp)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-link_libraries(circularbuffer testing GTest::gtest GTest::gtest_main)
+link_libraries(asan circularbuffer testing GTest::gtest GTest::gtest_main)
+add_compile_options(-fsanitize=address)
 
 ############################## UNIT TESTS #########################
 # SemaphoreLock

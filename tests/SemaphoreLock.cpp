@@ -20,8 +20,8 @@ TEST(SemaphoreLock, ConstructorFailIfNameTooShort) {
 
 TEST(SemaphoreLock, ConstructorFailIfNameTooLong) {
     // Invalid name - too long
-    char nameTooLong[SemaphoreLock::MAX_SEM_NAME_LEN + 2]{};
-    std::memset(nameTooLong, 'a', SemaphoreLock::MAX_SEM_NAME_LEN + 1);
+    char nameTooLong[SemaphoreLock::MAX_SEMAPHORE_NAME_LEN + 2]{};
+    std::memset(nameTooLong, 'a', SemaphoreLock::MAX_SEMAPHORE_NAME_LEN + 1);
     EXPECT_THROW(SemaphoreLock{nameTooLong}, std::length_error);
 }
 

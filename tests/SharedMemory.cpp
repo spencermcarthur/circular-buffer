@@ -4,6 +4,7 @@
 #include <linux/limits.h>
 
 #include <cstring>
+#include <stdexcept>
 
 #include "Utils.hpp"
 
@@ -64,6 +65,26 @@ TEST(SharedMemory, ConstructorExistingMemory) {
 
     // Make sure ref count decreased
     EXPECT_EQ(shmem1.ReferenceCount(), 1);
+}
+
+TEST(SharedMemory, ConstructorFailExistingMemoryWrongSize) {
+    // Make sure shared memory doesn't exist
+    if (SharedMemExists(g_ValidName)) {
+        FreeSharedMem(g_ValidName);
+    }
+    ASSERT_FALSE(SharedMemExists(g_ValidName));
+
+    // Create an instance of SharedMemory
+    SharedMemory shmem1(g_ValidName, g_Size);
+
+    // Check that shared memory was created
+    EXPECT_TRUE(SharedMemExists(g_ValidName));
+
+    // Make sure we are the only instance
+    EXPECT_EQ(shmem1.ReferenceCount(), 1);
+
+    // Create a second instance
+    EXPECT_THROW(SharedMemory(g_ValidName, g_Size + 1), std::runtime_error);
 }
 
 TEST(SharedMemory, DestructorFreeMemoryOnRefCountZero) {
