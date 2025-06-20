@@ -3,5 +3,8 @@ Checks: '-*,clang-analyzer-*,readability-*,performance-*,modernize-*,misc-*,goog
     -modernize-avoid-c-arrays,
     -modernize-use-auto,
     -google-readability-todo,
+    -google-build-using-namespace,
+    -readability-named-parameter,
+    -readability-identifier-length,
     -misc-non-private-member-variables-in-classes'
 HeaderFilterRegex: '.*'
