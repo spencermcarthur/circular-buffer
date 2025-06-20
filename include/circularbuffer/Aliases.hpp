@@ -10,7 +10,7 @@ using DataT = std::byte;
 using BufferT = std::span<DataT>;
 using IndexT = uint64_t;
 using IterT = BufferT::iterator;
-using MessageSizeT = uint32_t;
+using MessageSizeT = int32_t;
 using SeqNumT = uint64_t;
 
 static constexpr int CACHELINE_SIZE = __CACHELINE_SIZE_BYTES;
