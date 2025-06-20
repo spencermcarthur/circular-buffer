@@ -1,24 +1,35 @@
 # Circular Buffer
 
-## Details
-- Arbitrary-length messages of from 1B to (2<sup>16</sup>-1)B
-- Shared memory for IPC between one writer process and multiple reader processes
-- Dynamic buffer size up to 50MiB
-- Reader overwrite detection
+## Features
+✅ Arbitrary-length messages from 1 to 65535 bytes \
+✅ Shared memory for IPC between one writer process and multiple reader processes \
+✅ Dynamic buffer size up to 50 MiB \
+✅ Reader overwrite detection
 
 ## Requirements
 - C++ 20
 - Linux kernel (for syscalls)
 
-## Dependencies
-- libgtest
-- libbenchmark
-- libspdlog (bundled)
+## External Build Dependencies
+- libgtest (unit tests only)
+- libbenchmark (benchmarks only)
+
+## Building
+```
+git clone git@github.com:spencermcarthur/circular-buffer.git
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug|Release ..
+cmake --build .
+```
+Optional targets: `UnitTests`, `Benchmarks`, `Apps`
 
 ## Approach
+- Size-prefixed buffer schema
+    - Message size is written as an unsigned 32-bit integer in front of the message data
 - Shared memory using Linux/POSIX syscalls
-    - `shm_open`/`shm_unlink` for requesting shared memory from the kernel
-    - `mmap`/`munmap` for mapping shared memory to process virtual memory
+    - `shm_open`/`shm_unlink` for allocating/freeing shared memory from the kernel
+    - `mmap`/`munmap` for mapping/unmapping shared memory to process virtual memory
     - semaphores for coordinating allocation/deallocation of shared memory between independent processes
 
 ## Components
@@ -35,22 +46,22 @@ At destruction, it unmaps the shared memory from the calling process' virtual me
 
 It uses `SemaphoreLock` for the allocation/free calls to ensure coordination between independent processes.
 
-It allows reinterpretation of the shared memory as a struct (`T* AsStruct<T>()`) or contiguous memory (`std::span<T> AsSpan<T>()`).
+Public template methods allow reinterpretation of the shared memory as a struct (`AsStruct()`) or a contiguous range of data (`AsSpan()`).
 
 ### `CircularBuffer::Spec`
 A POD structure to convey information about buffer shared memory names and buffer size.
 
 ### `CircularBuffer::State`
-A POD structure to maintain state information about the buffer in shared memory, include atomic read and write pointers. Owned and managed by `IWrapper` interface and used by `Reader` and `Writer`.
+A POD structure to maintain state information about the buffer in shared memory, include atomic read and write pointers. Owned and managed by `IWrapper` interface and used for read and write operations.
 
 ### `CircularBuffer::IWrapper`
 An interface class that owns `SharedMemory` objects that manage access to buffer indices and data. It facilitates the simple implementation of `Reader` and `Writer`. It takes a `CircularBuffer::Spec const&` for construction.
 
 ### `CircularBuffer::Reader`
-`IWrapper` implementation that facilitates reading from the buffer. Implements method `int Read(span<byte>)`.
+`IWrapper` implementation that facilitates reading from the buffer. Implements public `Read()` methods.
 
 ### `CircularBuffer::Writer`
-`IWrapper` implementation that facilitates writing to the buffer. Implements method `void Write(span<byte>)`.
+`IWrapper` implementation that facilitates writing to the buffer. Implements public `Write()` methods.
 
 ## Testing
 
@@ -71,7 +82,13 @@ An interface class that owns `SharedMemory` objects that manage access to buffer
     - Reference counter works
     - Shared memory is freed after last object goes out of scope
 
+### Integration Tests
+`ReaderApp` and `WriterApp`
+- Run writer and reader in separate processes to demonstrate IPC integration
+- Reader can be run in "slow" mode to demonstrate overwrite detection: `./ReaderApp slow`
+
 ## References
 - [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024](https://www.youtube.com/watch?v=sX2nF1fW7kI)
-- [shm_open(3) — Linux manual page](https://man7.org/linux/man-pages/man3/shm_open.3.html)
-- [mmap(2) — Linux manual page](https://man7.org/linux/man-pages/man2/mmap.2.html)
+- [shm_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/shm_overview.7.html)
+- [sem_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/sem_overview.7.html)
+- [ccpreference](https://cppreference.com/)
