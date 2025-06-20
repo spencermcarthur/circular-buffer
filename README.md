@@ -1,17 +1,22 @@
 # Circular Buffer
 
-Implement a circular memory buffer capable of handling messages of arbitrary length,
-with each message being less than 2<sup>16</sup> bytes. The buffer will facilitate inter-process
-communication using a shared memory segment and should support asynchronous
-read and write operations. The buffer size will be specified at construction.
-If the reader process becomes too slow and the data it intends to read gets overwritten,
-it must detect this condition, print an error message, and terminate.
-The implementation must include tests using Google Test (GTest).
+## Details
+- Arbitrary-length messages of from 1B to (2<sup>16</sup>-1)B
+- Shared memory for IPC between one writer process and multiple reader processes
+- Dynamic buffer size up to 50MiB
+- Reader overwrite detection
+
+## Requirements
+- C++ 20
+- Linux kernel (for syscalls)
+
+## Dependencies
+- libgtest
+- libbenchmark
+- libspdlog (bundled)
 
 ## Approach
-- C++ Standard: 20
-- Linux operating system (I'm using WSL 2 running Ubuntu 24.04.1 LTS)
-- IPC: shared memory using Linux/POSIX syscalls
+- Shared memory using Linux/POSIX syscalls
     - `shm_open`/`shm_unlink` for requesting shared memory from the kernel
     - `mmap`/`munmap` for mapping shared memory to process virtual memory
     - semaphores for coordinating allocation/deallocation of shared memory between independent processes
