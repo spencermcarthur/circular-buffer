@@ -174,7 +174,7 @@ All testing applications, including GTest units, are compiled with `-fsanitize=a
 
 ### Integration Tests
 
-#### `bin/ReaderApp`/`bin/WriterApp`
+#### `bin/ReaderApp`, `bin/WriterApp`
 - Run writer and reader apps in separate processes to demonstrate IPC integration
 - Reader optionally takes command-line arg `slow` to demonstrate overwrite detection
 - Writer optionally takes command-line arg `fast` to speed up overwrite detection demonstration
@@ -187,6 +187,10 @@ All testing applications, including GTest units, are compiled with `-fsanitize=a
 #### `bin/ReaderWriterApp`
 - Can run this app to run the reader and writer in separate threads of the same process
 - Optionally takes any combination/ordering of command-line args `slow`/`fast` for reader/writer respectively
+
+
+### Benchmark
+The `WriterBenchmark` demonstrates the performance effects of different combinations of message sizes and buffer capacities.
 
 ## References
 1. [When Nanoseconds Matter: Ultrafast Trading Systems in C++ - David Gross - CppCon 2024 (YouTube)](https://www.youtube.com/watch?v=sX2nF1fW7kI)
