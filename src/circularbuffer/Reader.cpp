@@ -32,8 +32,10 @@ int Reader::Read(BufferT readBuffer) {
         m_State->seqNum.load(std::memory_order_acquire) - m_LocalSeqNum;
     if (lag > m_CircularBuffer.size_bytes()) [[unlikely]] {
         // Overwritten
-        SPDLOG_CRITICAL("Overwrite detected: writer is {} bytes ahead of me",
-                        lag);
+        SPDLOG_CRITICAL(
+            "Overwrite detected: writer is {} bytes ahead of me > {} byte "
+            "buffer size",
+            lag, m_CircularBuffer.size_bytes());
         return INT_MIN;
     }
 
@@ -157,8 +159,10 @@ int Reader::Read(BufferT readBuffer) {
     lag = m_State->seqNum.load(std::memory_order_acquire) - m_LocalSeqNum;
     if (lag > m_CircularBuffer.size_bytes()) [[unlikely]] {
         // Overwritten
-        SPDLOG_CRITICAL("Overwrite detected: writer is {} bytes ahead of me",
-                        lag);
+        SPDLOG_CRITICAL(
+            "Overwrite detected: writer is {} bytes ahead of me > {} byte "
+            "buffer size",
+            lag, m_CircularBuffer.size_bytes());
         return INT_MIN;
     }
 
