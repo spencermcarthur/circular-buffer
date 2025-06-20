@@ -155,7 +155,6 @@ The reader performs the same wraparound checks as the writer, and reads the data
 4. [sem_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/sem_overview.7.html)
 5. [ccpreference](https://cppreference.com/)
 
-## Notes
 [^1]: Up to 50 MiB. This is a somewhat arbitrary limitation and can be changed at compile time via command-line input, but benchmarks show that writing to a very large buffer is less performant than a small/medium buffer, probably due to cache contention.
 
 [^2]: See slides 84-86 of ref. 2 for a visualization.
