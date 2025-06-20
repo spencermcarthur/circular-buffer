@@ -176,6 +176,7 @@ All testing applications, including GTest units, are compiled with `-fsanitize=a
 
 #### `bin/ReaderApp`, `bin/WriterApp`
 - Run writer and reader apps in separate processes to demonstrate IPC integration
+    - As expected, if the reader detects overwrite it will stop, but the writer will keep going
 - Reader optionally takes command-line arg `slow` to demonstrate overwrite detection
 - Writer optionally takes command-line arg `fast` to speed up overwrite detection demonstration
 - Buffer configuration controlled by file `bin/bufferconfig.txt` (run `cmake rebuild_cache` after changing to copy changes to build directory)
@@ -187,7 +188,7 @@ All testing applications, including GTest units, are compiled with `-fsanitize=a
 #### `bin/ReaderWriterApp`
 - Can run this app to run the reader and writer in separate threads of the same process
 - Optionally takes any combination/ordering of command-line args `slow`/`fast` for reader/writer respectively
-
+- Stops when the writer detects an overwrite
 
 ### Benchmark
 The `WriterBenchmark` demonstrates the performance effects of different combinations of message sizes and buffer capacities.
