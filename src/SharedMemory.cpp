@@ -19,7 +19,8 @@
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
-SharedMemory::SharedMemory(std::string_view name, size_t requestedSize)
+SharedMemory::SharedMemory(const std::string_view name,
+                           const size_t requestedSize)
     : m_DataSize(requestedSize),
       m_TotalSize(requestedSize + DATA_OFFSET_BYTES),
       m_SemLock(name) {

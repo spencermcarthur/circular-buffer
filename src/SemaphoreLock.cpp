@@ -17,7 +17,7 @@
 
 static constexpr int OPEN_READ_WRITE = S_IRUSR + S_IWUSR;
 
-SemaphoreLock::SemaphoreLock(std::string_view name) {
+SemaphoreLock::SemaphoreLock(const std::string_view name) {
     SetupSpdlog();
 
     // Validate name
