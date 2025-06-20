@@ -19,3 +19,5 @@ add_custom_target(Apps
         WriterApp
         ReaderApp
 )
+
+add_subdirectory(benchmarks)

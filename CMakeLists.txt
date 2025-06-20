@@ -71,7 +71,6 @@ endif()
 
 
 # Subdirs
-add_subdirectory(${CMAKE_SOURCE_DIR}/benchmarks)
-add_subdirectory(${CMAKE_SOURCE_DIR}/bin)
-add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
-add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+add_subdirectory(bin)
+add_subdirectory(lib)
+add_subdirectory(tests)
