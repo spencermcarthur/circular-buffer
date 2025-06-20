@@ -20,6 +20,13 @@ TEST_F(Reader, Constructor) {
     CB::Reader reader(spec);
 }
 
+TEST_F(Reader, ConstructMultiple) {
+    // Construct successfully
+    CB::Reader reader1(spec);
+    CB::Reader reader2(spec);
+    CB::Reader reader3(spec);
+}
+
 TEST_F(Reader, ReadNothing) {
     constexpr int iter = 1000;
 
@@ -35,7 +42,7 @@ TEST_F(Reader, ReadNothing) {
     delete[] buffer.data();
 }
 
-TEST_F(Reader, ReadSome) {
+TEST_F(Reader, ReadSingleMessage) {
     CB::Reader reader(spec);
 
     // Make a buffer for r/w
@@ -104,8 +111,6 @@ TEST_F(Reader, Wraparoud) {
     delete[] writeBuffer.data();
     delete[] readBuffer.data();
 }
-
-// TODO:
 
 TEST_F(Reader, ReadFailBufferTooSmall) {
     CB::Reader reader(spec);

@@ -85,9 +85,6 @@ TEST_F(Writer, WrapAround) {
     delete[] writeBuffer.data();
 }
 
-// TODO: add a test for case where remaining space to the end of the buffer is
-// too small for the header
-
 TEST_F(Writer, WriteFailIfMessageTooBig) {
     CB::Writer writer(spec);
 
