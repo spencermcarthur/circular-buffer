@@ -3,7 +3,7 @@
 ## Features
 ✅ Arbitrary-length messages from 1 to 65535 bytes \
 ✅ Shared memory for IPC between one writer process and multiple reader processes \
-✅ Dynamic buffer size up to 50 MiB \
+✅ Dynamic buffer size up to 50 MiB<sup>[1](#cache-size)</sup> \
 ✅ Reader overwrite detection
 
 ## Requirements
@@ -92,3 +92,6 @@ An interface class that owns `SharedMemory` objects that manage access to buffer
 - [shm_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/shm_overview.7.html)
 - [sem_overview(7) — Linux manual page](https://man7.org/linux/man-pages/man7/sem_overview.7.html)
 - [ccpreference](https://cppreference.com/)
+
+## Notes
+<a name="cache-size">1</a> Somewhat arbitrary, but benchmarks show that writing large messages into a large buffer is less performant than large messages into a smalle buffer, probably due to cache contention.
