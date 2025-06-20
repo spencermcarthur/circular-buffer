@@ -6,7 +6,7 @@
 #include <string>
 
 #include "Aliases.hpp"
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "IWrapper.hpp"
 #include "SemaphoreLock.hpp"
 #include "Spec.hpp"

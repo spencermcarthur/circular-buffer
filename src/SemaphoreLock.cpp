@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "Utils.hpp"
 #include "spdlog/spdlog.h"
 

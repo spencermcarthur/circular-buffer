@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <string_view>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 
 // Semaphore lock class
 class SemaphoreLock {

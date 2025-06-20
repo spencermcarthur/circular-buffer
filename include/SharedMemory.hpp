@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "SemaphoreLock.hpp"
 
 // Class for managing Linux shared memory

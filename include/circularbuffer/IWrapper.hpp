@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "SharedMemory.hpp"
 #include "Spec.hpp"
 #include "State.hpp"

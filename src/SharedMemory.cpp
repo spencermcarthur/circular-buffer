@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "Defines.hpp"
+#include "Macros.hpp"
 #include "SemaphoreLock.hpp"
 #include "Utils.hpp"
 #include "spdlog/common.h"
