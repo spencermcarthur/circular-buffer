@@ -14,7 +14,15 @@
 
 namespace CircularBuffer {
 
-Reader::Reader(const Spec& spec) : IWrapper(spec) { SetupSpdlog(); }
+Reader::Reader(const Spec& spec) : IWrapper(spec) {
+    SetupSpdlog();
+
+    // Synchronize with buffer state
+    m_LocalIndex = m_State->readIdx.load(std::memory_order_acquire);
+    m_LocalSeqNum = m_State->seqNum.load(std::memory_order_acquire);
+    SPDLOG_DEBUG("Synchronized with buffer state: read={}, seq={}",
+                 m_LocalIndex, m_LocalSeqNum);
+}
 
 int Reader::Read(BufferT readBuffer) {
     static_assert(HEADER_SIZE <= sizeof(int));
